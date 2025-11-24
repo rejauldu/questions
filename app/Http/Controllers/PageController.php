@@ -30,6 +30,10 @@ class PageController extends Controller
             'description' => 'Contact ICT4Today for questions and support.'
         ]);
     }
+    public function chatbot()
+    {
+        return Inertia::render('Chatbot/Index', [], 'chat_layout');
+    }
     public function dashboard()
     {
         return Inertia::render('Dashboard');

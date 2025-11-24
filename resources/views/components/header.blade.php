@@ -18,14 +18,14 @@
                 </li>
                 <li>
                     <a href="{{ url('/questions') }}"
-                        class="{{ request()->routeIs('questions') ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1' : 'text-white hover:text-yellow-300' }} transition duration-200 ease-in-out">
+                        class="{{ request()->routeIs('questions.index') ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1' : 'text-white hover:text-yellow-300' }} transition duration-200 ease-in-out">
                         Questions
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url('/instructors') }}"
-                        class="{{ request()->routeIs('instructors') ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1' : 'text-white hover:text-yellow-300' }} transition duration-200 ease-in-out">
-                        Instructors
+                    <a href="{{ url('/chatbot') }}"
+                        class="{{ request()->routeIs('chatbot') ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1' : 'text-white hover:text-yellow-300' }} transition duration-200 ease-in-out">
+                        Chatbot
                     </a>
                 </li>
                 <li>

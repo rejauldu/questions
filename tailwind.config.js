@@ -19,4 +19,18 @@ export default {
     },
 
     plugins: [forms],
+
+    safelist: [
+        "fixed",
+        "left-0",
+        "top-0",
+        "z-50",
+        "w-64",
+        "h-full",
+        "shadow-lg",
+        "hidden",
+        "w-1/4",
+        "max-w-[20rem]",
+        "w-16",
+    ],
 };

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+            // Institution Link (Assuming an 'institutions' table exists)
+            $table->unsignedSmallInteger('institution_id')->nullable();
             $table->timestamps();
         });
 
