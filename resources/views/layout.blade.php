@@ -14,7 +14,7 @@
             'description' => $description ?? 'Your default description'
         ])
         <!-- Scripts -->
-        @vite(['resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-gray-50 text-gray-800">
         @include('components.header')
@@ -24,5 +24,6 @@
         </main>
 
         @include('components.footer')
+        @stack('scripts')
     </body>
 </html>

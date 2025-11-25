@@ -20,32 +20,36 @@
         <div class="flex flex-col items-center space-y-6 order-3 md:order-5 w-full max-w-lg">
             
             <!-- Search Bar -->
-            <div
-                class="flex items-center bg-white rounded-full shadow-2xl w-full
-                    transition-all duration-200 p-1 
-                    focus-within:ring-4 focus-within:ring-yellow-400/70">
+            <form action="{{ route('search') }}" method="GET" class="flex w-full">
+                <div class="flex items-center bg-white rounded-full shadow-2xl w-full
+                            transition-all duration-200 p-1 
+                            focus-within:ring-4 focus-within:ring-yellow-400/70">
 
-                <!-- Search Input Field -->
-                <input
-                    type="text"
-                    placeholder="Search an Exam Name, University, or Subject..."
-                    class="w-full text-gray-800 placeholder-gray-500 text-lg py-2 pl-6
-                        border-none outline-none focus:outline-none 
-                        focus:ring-0 focus:border-0 p-0 m-0 bg-transparent" />
-                
-                <!-- Stylish Search Button -->
-                <button
-                    class="flex items-center justify-center bg-indigo-600 text-white rounded-full 
-                            h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 transition duration-300 
-                            hover:bg-indigo-500 shadow-md transform hover:scale-105"
-                    aria-label="Search">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </button>
-            </div>
+                    <!-- Search Input Field -->
+                    <input
+                        type="text"
+                        name="q"
+                        placeholder="Search an Exam Name, University, or Subject..."
+                        class="w-full text-gray-800 placeholder-gray-500 text-lg py-2 pl-6
+                            border-none outline-none focus:outline-none 
+                            focus:ring-0 focus:border-0 p-0 m-0 bg-transparent"
+                        value="{{ $search ?? '' }}" />
+                    
+                    <!-- Search Button -->
+                    <button
+                        type="submit"
+                        class="flex items-center justify-center bg-indigo-600 text-white rounded-full 
+                                h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 transition duration-300 
+                                hover:bg-indigo-500 shadow-md transform hover:scale-105"
+                        aria-label="Search">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
 
             <!-- Ask the Bot Button -->
             <a href="{{ url('/chatbot') }}"

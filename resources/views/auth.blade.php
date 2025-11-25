@@ -8,11 +8,10 @@
     
     <!-- Scripts -->
     @routes
-    @vite(['resources/css/dashboard.css', 'resources/js/dashboard.js'])
+    @vite(['resources/css/chatbot.css', 'resources/js/chatbot.js'])
     @inertiaHead
 </head>
 <body>
     @inertia
 </body>
 </html>
-

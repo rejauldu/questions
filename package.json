@@ -3,8 +3,18 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+        "dev": "concurrently \"npm run dev:front\" \"npm run dev:chatbot\" \"npm run dev:dashboard\"",
+        "dev:front": "concurrently \"npm run front-css\" \"vite --config vite.front.config.js\"",
+        "dev:chatbot": "concurrently \"npm run chatbot-css\" \"vite --config vite.chatbot.config.js\"",
+        "dev:dashboard": "concurrently \"npm run dashboard-css\" \"vite --config vite.dashboard.config.js\"",
+
+        "front-css": "tailwindcss -i ./resources/css/app.css -c ./tailwind.config.js -o ./public/build/frontend.css --watch --verbose",
+        "chatbot-css": "tailwindcss -i ./resources/css/chatbot.css -c ./tailwind.config.js -o ./public/build/chatbot.css --watch --verbose",
+        "dashboard-css": "tailwindcss -i ./resources/css/dashboard.css -c ./tailwind.config.js -o ./public/build/dashboard.css --watch --verbose",
+
+        "build:front": "vite build --config vite.front.config.js",
+        "build:chatbot": "vite build --config vite.chatbot.config.js",
+        "build:dashboard": "vite build --config vite.dashboard.config.js"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
@@ -13,7 +23,7 @@
         "@vitejs/plugin-vue": "^6.0.2",
         "autoprefixer": "^10.4.12",
         "axios": "^1.11.0",
-        "concurrently": "^9.0.1",
+        "concurrently": "^9.2.1",
         "laravel-vite-plugin": "^2.0.0",
         "postcss": "^8.4.31",
         "tailwindcss": "^3.2.1",

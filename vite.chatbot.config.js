@@ -1,27 +1,28 @@
-import { defineConfig } from 'vite'
-import laravel from 'laravel-vite-plugin'
-import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     server: {
         host: 'ict',
-        port: 5173,
+        port: 5174,
         cors: true,
         hmr: {
             host: 'ict',
             protocol: 'http',
-            port: 5173,
+            port: 5174,
         },
     },
 
     plugins: [
         laravel({
             input: [
-                'resources/css/app.css',
-                'resources/js/app.js'
+                // Chatbot + Auth pages
+                'resources/css/chatbot.css',
+                'resources/js/chatbot.js',
             ],
             refresh: true,
         }),
         vue(),
     ],
-})
+});

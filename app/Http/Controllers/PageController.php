@@ -22,14 +22,6 @@ class PageController extends Controller
             'description' => 'Learn about ICT4Today and our mission.'
         ]);
     }
-
-    public function contact()
-    {
-        return view('pages.contact', [
-            'title' => 'Contact Us - ICT4Today',
-            'description' => 'Contact ICT4Today for questions and support.'
-        ]);
-    }
     public function chatbot()
     {
         return Inertia::render('Chatbot/Index', [], 'chat_layout');

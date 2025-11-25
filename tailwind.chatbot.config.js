@@ -1,22 +1,13 @@
-import defaultTheme from 'tailwindcss/defaultTheme'
-import forms from '@tailwindcss/forms'
+import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
 
+/** @type {import('tailwindcss').Config} */
 export default {
     content: [
-        // front
-        "./resources/views/**/*.blade.php",
-        "./resources/js/app.js",
-        // chatbot
-        "./resources/js/chatbot.js",
         "./resources/js/Pages/Chatbot/**/*.vue",
         "./resources/js/Pages/Auth/**/*.vue",
         "./resources/js/Components/**/*.vue",
         "./resources/js/Layouts/**/*.vue",
-        // dashboard
-        "./resources/js/dashboard.js",
-        "./resources/js/Pages/**/*.vue",
-        // "./resources/js/Components/**/*.vue",
-        // "./resources/js/Layouts/**/*.vue",
     ],
 
     theme: {
@@ -42,4 +33,4 @@ export default {
         "max-w-[20rem]",
         "w-16",
     ],
-}
+};

@@ -33,6 +33,7 @@ class Post extends Model
         'board',
         'year',
         'class',
+        'institution_id'
     ];
 
     /**
