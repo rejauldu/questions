@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Post;
 use App\Models\Institution;
+use App\Models\Subject;
 
 class QuestionController extends Controller
 {
@@ -15,11 +16,76 @@ class QuestionController extends Controller
      * Display a listing of the resource.
      */
 
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::all();
-        return view("questions.index", compact("posts"));
+        $q = trim($request->input('q'));
+        $perPage = 10;
+
+        $query = \App\Models\Post::query()->with(['institution', 'subject'])
+                ->join('institutions', 'institutions.id', '=', 'posts.institution_id')
+                ->join('subjects', 'subjects.id', '=', 'posts.subject_id');
+
+        if ($q) {
+            $words = preg_split('/\s+/', $q); // split by spaces
+            $bindings = [];
+
+            // Direct full query match score
+            $scoreSql = "(CASE 
+                WHEN posts.article LIKE ? THEN 70
+                WHEN institutions.name LIKE ? THEN 90
+                WHEN subjects.name LIKE ? THEN 80
+                ELSE 0
+            END)";
+
+            $bindings[] = "%{$q}%";
+            $bindings[] = "%{$q}%";
+            $bindings[] = "%{$q}%";
+
+            // Add word match score dynamically
+            foreach ($words as $word) {
+                $word = trim($word);
+                if ($word) {
+                    $scoreSql .= " + (CASE WHEN posts.article LIKE ? THEN 10 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
+
+                    $scoreSql .= " + (CASE WHEN institutions.name LIKE ? THEN 15 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
+
+                    $scoreSql .= " + (CASE WHEN subjects.name LIKE ? THEN 15 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
+                }
+            }
+
+            $query->selectRaw("posts.*, {$scoreSql} as match_score", $bindings)
+                ->where(function ($subQuery) use ($q, $words) {
+                    $subQuery->where('posts.article', 'LIKE', "%{$q}%")
+                            ->orWhere('institutions.name', 'LIKE', "%{$q}%")
+                            ->orWhere('subjects.name', 'LIKE', "%{$q}%");
+
+                    // Add word-level matching
+                    foreach ($words as $word) {
+                        $word = trim($word);
+                        if ($word) {
+                            $subQuery->orWhere('posts.article', 'LIKE', "%{$word}%")
+                                    ->orWhere('institutions.name', 'LIKE', "%{$word}%")
+                                    ->orWhere('subjects.name', 'LIKE', "%{$word}%");
+                        }
+                    }
+                })
+                ->orderByDesc('match_score')
+                ->orderByDesc('posts.year')
+                ->orderByDesc('posts.created_at');
+        } else {
+            $query->select('posts.*')
+                ->orderByDesc('posts.year')
+                ->orderByDesc('posts.created_at');
+        }
+
+        $posts = $query->paginate($perPage)->withQueryString();
+
+        return view('questions.index', compact('posts', 'q'));
     }
+
 
     public function list()
     {
@@ -111,8 +177,8 @@ class QuestionController extends Controller
         if ($request->filled('institution_id')) {
             $query->where('institution_id', $request->institution_id);
         }
-        if ($request->filled('subject')) {
-            $query->where('subject', $request->subject);
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->subject_id);
         }
         if ($request->filled('topic')) {
             $query->where('topic', $request->topic);
@@ -146,10 +212,14 @@ class QuestionController extends Controller
         $perPage = 10; 
 
         // Fetch results with pagination
-        $posts = $query->orderBy('subject')
-                      ->orderBy('topic')
-                      ->paginate($perPage)
-                      ->withQueryString();
+        $posts = $query->with(['institution', 'subject'])
+            ->orderBy('year', 'desc')
+            ->orderBy(
+                Subject::select('name')->whereColumn('subjects.id', 'posts.subject_id')
+            )
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
 
         // 3. Return the Blade view with data
         return view('pages.search', [
@@ -196,12 +266,11 @@ class QuestionController extends Controller
             'institution_id' => 'required|exists:institutions,id',
         ]);
 
-        $subjects = Post::where('institution_id', $request->institution_id)
-            ->distinct()
-            ->pluck('subject')
-            ->filter()
-            ->sort()
-            ->values();
+        $subjects = Subject::whereHas('posts', function($q) use ($request) {
+                $q->where('institution_id', $request->institution_id);
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return response()->json($subjects);
     }

@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const instIdSelect = document.getElementById('institution_id');
-    const subjectSelect = document.getElementById('subject');
+    const subjectSelect = document.getElementById('subject_id');
     const subjectsApiUrl = typeof SUBJECTS_API_URL !== 'undefined' ? SUBJECTS_API_URL : '';
     const currentSubject = typeof CURRENT_SUBJECT !== 'undefined' ? CURRENT_SUBJECT : '';
     const currentInstitutionId = typeof CURRENT_INSTITUTION_ID !== 'undefined' ? CURRENT_INSTITUTION_ID : '';
 
     const loadSubjects = async (institutionId, selectedSubject = null) => {
         subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
-
+        
         if (!institutionId) {
             subjectSelect.innerHTML = '<option value="">Select Institution First</option>';
             return;
@@ -24,9 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (subjects && subjects.length) {
                 subjects.forEach(sub => {
                     const option = document.createElement('option');
-                    option.value = sub;
-                    option.textContent = sub;
-                    if (sub === selectedSubject) option.selected = true;
+                    option.value = sub.id;
+                    option.textContent = sub.name;
+                    if (sub.id === +selectedSubject) option.selected = true;
                     subjectSelect.appendChild(option);
                 });
             } else {

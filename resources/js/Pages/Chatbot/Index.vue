@@ -19,12 +19,17 @@ const isHistoryOpen = ref(true);
 const newMessage = ref('');
 const chatContainer = ref(null);
 const isLoading = ref(false);
-const messages = ref(props.activeChat.messages);
+const messages = ref(
+    Array.isArray(props.activeChat.messages)
+        ? props.activeChat.messages
+        : Object.values(props.activeChat.messages)
+);
 const currentChatId = computed(() => props.activeChat.id);
 const windowWidth = ref(window.innerWidth);
+const messageInput = ref(null);
 
 watch(() => props.activeChat.messages, (newMessages) => {
-	messages.value = newMessages;
+    messages.value = newMessages;
 }, { deep: true });
 
 /* -------------------------------
@@ -115,6 +120,10 @@ const sendMessage = async () => {
 		});
 	} finally {
 		isLoading.value = false;
+		// Focus the input field after sending
+		nextTick(() => {
+			if (messageInput.value) messageInput.value.focus();
+		});
 	}
 };
 const linkify = (text) => {
@@ -152,7 +161,7 @@ const linkify = (text) => {
         return `<a href="${url}" target="_blank" class="text-blue-600 underline">${hyphenated}</a>`;
     });
 };
-const maxChars = 100;
+const maxChars = 200;
 
 const charCount = computed(() => {
     return newMessage.value.length;
@@ -162,6 +171,12 @@ onMounted(() => {
 	if (chatContainer.value) {
 		chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
 	}
+	
+    nextTick(() => {
+        if (messageInput.value) {
+            messageInput.value.focus();
+        }
+    });
 });
 
 onMounted(() => {
@@ -239,16 +254,16 @@ onMounted(() => {
 			<div class="w-full bg-white flex flex-col h-full">
 				<div class="p-4 border-b border-gray-200 bg-blue-600 text-white flex items-center justify-between">
 					<div class="flex items-center space-x-3">
-        <!-- Home Link/Button -->
-        <!-- Return to Home Link -->
-        <a :href="route('home')"
-           class="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100 transition font-medium text-sm">
-           Return to Home
-        </a>
+						<!-- Home Link/Button -->
+						<!-- Return to Home Link -->
+						<a :href="route('home')"
+						class="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100 transition font-medium text-sm">
+						Return to Home
+						</a>
 
-        <!-- Chat Title -->
-        <h1 class="text-xl font-bold">{{ activeChat.title }}</h1>
-    </div>
+						<!-- Chat Title -->
+						<h1 class="text-xl font-bold">{{ activeChat.title }}</h1>
+					</div>
 					<button @click="toggleHistory"
 						class="p-2 rounded-full bg-blue-700 hover:bg-blue-800 transition shadow-md">
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
@@ -261,20 +276,24 @@ onMounted(() => {
 					</button>
 				</div>
 
-				<div ref="chatContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gray-50">
+				<div ref="chatContainer" class="flex-1 p-6 overflow-y-auto space-y-4 bg-cyan-50">
 					<div v-for="message in messages" :key="message.id"
 						:class="['flex', message.sender === 'user' ? 'justify-end' : 'justify-start']">
-						<div
-							:class="[
-								'p-4 rounded-xl max-w-sm lg:max-w-md shadow-md',
-								message.sender === 'user'
-									? 'bg-blue-600 text-white rounded-br-none'
-									: 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
-							]"
-							v-html="linkify(
-                                    message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                )"
-						></div>
+
+						<!-- BOT MESSAGE WITH TRANSITION -->
+						<transition name="fade" appear>
+							<div v-if="message.sender === 'bot'"
+								class="p-4 rounded-xl max-w-sm lg:max-w-md shadow-md bg-white text-gray-800 rounded-tl-none border border-gray-100"
+								v-html="linkify(message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'))">
+							</div>
+						</transition>
+
+						<!-- USER MESSAGE (NO TRANSITION) -->
+						<div v-if="message.sender === 'user'"
+							class="p-4 rounded-xl max-w-sm lg:max-w-md shadow-md bg-blue-600 text-white rounded-br-none">
+							{{ message.text }}
+						</div>
+
 					</div>
 
 					<div v-if="isLoading" class="flex justify-start">
@@ -293,6 +312,7 @@ onMounted(() => {
                     <div class="flex-1 flex flex-col relative">
                         <input
                         type="text"
+						ref="messageInput"
                         v-model="newMessage"
                         @keyup.enter="sendMessage"
                         :disabled="isLoading"

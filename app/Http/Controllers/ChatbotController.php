@@ -126,7 +126,7 @@ class ChatbotController extends Controller
              * 3. Save user message
              */
             $userMessageRecord = $thread->messages()->create([
-                'content' => $userMessage,
+                'content' => Str::limit($userMessage, 200),
                 'sender_type' => 'user',
             ]);
 
@@ -196,8 +196,8 @@ class ChatbotController extends Controller
 
                     if (!$existing) {
                         Faq::create([
-                            'question'  => $canonicalQ,
-                            'answer'    => $parsed['response'],
+                            'question'  => Str::limit($canonicalQ, 200),
+                            'answer'    => Str::limit($parsed['response'], 200),
                             'frequency' => 1,
                         ]);
                     }
@@ -214,7 +214,7 @@ class ChatbotController extends Controller
              * 8. Save bot message
              */
             $botMessageRecord = $thread->messages()->create([
-                'content' => $botResponseText,
+                'content' => Str::limit($botResponseText, 200),
                 'sender_type' => 'bot',
             ]);
 

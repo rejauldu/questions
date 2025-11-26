@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Institution;
+Use App\Models\Post;
 
 class Subject extends Model
 {
@@ -41,8 +43,12 @@ class Subject extends Model
      * Get the institution that owns the subject.
      * (Assumes you have an Institution model and migration)
      */
-    public function institution(): BelongsTo
+    public function institution(): HasMany
     {
-        return $this->belongsTo(Institution::class);
+        return $this->hasMany(Institution::class);
+    }
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
     }
 }

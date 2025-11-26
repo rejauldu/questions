@@ -4,19 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Institution;
+use App\Models\Subject;
 
 class Post extends Model
 {
     use HasFactory;
 
-    /**
-     * Table name (optional if table name = posts)
-     */
     protected $table = 'posts';
 
-    /**
-     * Allow mass assignment
-     */
     protected $fillable = [
         'article',
         'a',
@@ -24,7 +20,7 @@ class Post extends Model
         'c',
         'd',
         'answer',
-        'subject',
+        'subject_id',
         'topic',
         'sub_topic',
         'section',
@@ -36,12 +32,24 @@ class Post extends Model
         'institution_id'
     ];
 
-    /**
-     * Casts (optional)
-     * Use this only if you later want arrays, JSON, or booleans.
-     */
     protected $casts = [
         'year' => 'integer',
         'class' => 'string',
     ];
+
+    /**
+     * ---------------------------
+     * Institution Relationship
+     * ---------------------------
+     * Each Post belongs to one Institution.
+     */
+    public function institution()
+    {
+        return $this->belongsTo(Institution::class);
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
 }

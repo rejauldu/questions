@@ -8,16 +8,18 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// Automatically import all pages in Pages folder
+const pages = import.meta.glob('./Pages/**/*.vue');
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/Auth/*.vue')
-        ) || resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/Chatbot/*.vue')
-        ),
+    resolve: (name) => {
+        const path = `./Pages/${name}.vue`;
+        if (!(path in pages)) {
+            throw new Error(`Page not found: ${path}`);
+        }
+        return pages[path]();
+    },
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
             .use(plugin)
