@@ -7,10 +7,14 @@ use Inertia\Inertia;
 use App\Models\Post;
 use App\Models\Institution;
 use App\Models\Subject;
+use App\Services\Image2WebpService;
 
 class QuestionController extends Controller
 {
-    
+    public function __construct()
+    {
+        $this->middleware('auth')->only(['create', 'store', 'update']);
+    }
     
     /**
      * Display a listing of the resource.
@@ -100,7 +104,29 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Questions/Create');
+        // Get institutions
+        $institutions = Institution::select('id','name')->get();
+
+        // Years: last 6 years including current
+        $currentYear = date('Y');
+        $years = [];
+        for ($i = 0; $i < 6; $i++) {
+            $years[] = $currentYear - $i;
+        }
+
+        // Classes dropdown
+        $classes = [
+            ['value' => 1, 'text' => '1st Year'],
+            ['value' => 2, 'text' => '2nd Year'],
+            ['value' => 3, 'text' => '3rd Year'],
+            ['value' => 4, 'text' => '4th Year'],
+        ];
+
+        return Inertia::render('Questions/Create', [
+            'institutions' => $institutions,
+            'years' => $years,
+            'classes' => $classes,
+        ]);
     }
 
     /**
@@ -109,20 +135,49 @@ class QuestionController extends Controller
     public function store(Request $request)
     {
         $data = $request->except(['_token', '_method']);
+        
+        if ($request->hasFile('url')) {
+            $file = $request->file('url');
+            $path = $file->store('questions', 'public'); // store in storage/app/public/questions
+            
+            $fullPath = storage_path('app/public/' . $path);
+            $converter = new Image2WebpService();
+            $webpPath = $converter->convert($fullPath, 800, 80);
+
+            // Convert the WebP full path back to a relative path for public access
+            $relativePath = str_replace(storage_path('app/public') . '/', '', $webpPath);
+
+            $data['url'] = $relativePath; // store relative path in DB
+        }
+
         $post = Post::create($data);
 
         return redirect()->route('questions.show', $post->id)
-                         ->with('success', 'Question created successfully.');
+                        ->with('success', 'Question created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($questionId, $slug = null)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::findOrFail($questionId);
 
-        return view("questions.show", compact("post"));
+        $q_meta = question_meta_text($post);
+
+        // Optionally, generate the slug
+        $realSlug = url_slug($post->article, $q_meta);
+
+        // Redirect if slug is missing or incorrect
+        if (!$slug || $slug !== $realSlug) {
+            return redirect()->route('questions.show', [
+                'question' => $post->id,
+                'slug' => $realSlug
+            ]);
+        }
+        
+
+        return view('questions.show', compact('post'));
     }
 
     /**

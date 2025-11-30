@@ -2,8 +2,8 @@
 
 @section('content')
 @include('home.hero')
-@include('home.trust')
-@include('home.courses')
+@include('home.feature')
+@include('home.content')
+@include('home.planner')
 @include('home.cta')
-@include('home.testimonial')
 @endsection

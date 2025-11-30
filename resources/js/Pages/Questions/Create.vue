@@ -1,8 +1,15 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import axios from 'axios';
 import 'mathlive';
+
+const props = defineProps({
+    institutions: Array,
+    years: Array,
+    classes: Array
+});
 
 // Form
 const form = useForm({
@@ -12,7 +19,8 @@ const form = useForm({
     c: '',
     d: '',
     answer: '',
-    subject: '',
+    institution_id: '', // store institution ID
+    subject_id: '',     // store subject ID
     topic: '',
     sub_topic: '',
     section: '',
@@ -21,49 +29,77 @@ const form = useForm({
     board: '',
     year: '',
     class: '',
+    url: null,
+}, { forceFormData: true });
+
+// Dynamic subjects
+const subjects = ref([]);
+
+// Watch institution change to fetch subjects
+watch(() => form.institution_id, async (newVal) => {
+    if (!newVal) {
+        subjects.value = [];
+        form.subject_id = '';
+        return;
+    }
+
+    try {
+        const res = await axios.get('/api/posts/subjects-by-institution', {
+            params: { institution_id: newVal }
+        });
+        subjects.value = res.data;
+        form.subject_id = ''; // reset selected subject
+    } catch (e) {
+        console.error(e);
+    }
 });
 
 // Math field
 const showMath = ref(false);
 const mathRef = ref(null);
+const preview = ref(null);
+const articleRef = ref(null);
 
-function toggleMathKeyboard() {
-    showMath.value = !showMath.value;
-}
+const toggleMathKeyboard = () => showMath.value = !showMath.value;
 
-function insertMath() {
-    if (!mathRef.value) return;
-
-    let raw = mathRef.value.getValue();
+const insertMath = () => {
+    if (!mathRef.value || !articleRef.value) return;
+    const raw = mathRef.value.getValue();
     if (!raw) return;
 
-    // Ensure wrapper always added
     const wrapped = `\\(${raw}\\)`;
-
-    const textarea = document.querySelector('#article-textarea');
+    const textarea = articleRef.value;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    form.article = 
+    form.article =
         form.article.substring(0, start) +
         wrapped +
         form.article.substring(end);
 
+    mathRef.value.setValue('');
     textarea.focus();
     textarea.selectionStart = textarea.selectionEnd = start + wrapped.length;
-}
+};
 
-function submit() {
+const previewImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    form.url = file;
+    preview.value = URL.createObjectURL(file);
+};
+
+const submit = () => {
     form.post(route('questions.store'), {
         onSuccess: page => {
-            // The server can return redirect (like normal redirect)
-            // Or you can manually visit the new page:
-            if (page.props.redirect) {
-                window.location.href = page.props.redirect;
-            }
+            preview.value = null;
+            form.reset();
+            if (fileRef?.value) fileRef.value.value = null;
+            if (page.props.redirect) window.location.href = page.props.redirect;
         }
     });
-}
+};
 </script>
 
 <template>
@@ -79,7 +115,7 @@ function submit() {
     <div class="py-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 space-y-4">
+                <div class="p-6 text-gray-900 space-y-4" :class="{ 'opacity-50 pointer-events-none': form.processing }">
 
                     <!-- Toolbar -->
                     <div class="flex gap-2 mb-2">
@@ -87,7 +123,6 @@ function submit() {
                             class="px-2 py-1 border rounded bg-white hover:bg-gray-100">
                             Math
                         </button>
-
                         <button @click="insertMath"
                             class="px-2 py-1 border rounded bg-white hover:bg-gray-100">
                             Insert
@@ -101,12 +136,9 @@ function submit() {
 
                     <!-- Article -->
                     <label class="block font-semibold">Article (উদ্দীপক)</label>
-                    <textarea
-                        id="article-textarea"
-                        v-model="form.article"
+                    <textarea ref="articleRef" v-model="form.article"
                         class="w-full border p-2 h-32"
-                        placeholder="Write article with math..."
-                    ></textarea>
+                        placeholder="Write article with math..."></textarea>
 
                     <!-- Options -->
                     <label class="font-semibold">ক)</label>
@@ -125,25 +157,59 @@ function submit() {
                     <label class="font-semibold">Answer</label>
                     <input v-model="form.answer" class="w-full border p-2" placeholder="উত্তর" />
 
-                    <!-- Metadata -->
+                    <!-- Metadata Dropdowns -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input v-model="form.subject" placeholder="Subject" class="border p-2"/>
+
+                        <!-- Institution -->
+                        <label class="font-semibold">Institution</label>
+                        <select v-model="form.institution_id" class="border p-2">
+                            <option value="">Select Institution</option>
+                            <option v-for="inst in institutions" :key="inst.id" :value="inst.id">
+                                {{ inst.name }}
+                            </option>
+                        </select>
+
+                        <!-- Subject -->
+                        <label class="font-semibold">Subject</label>
+                        <select v-model="form.subject_id" class="border p-2">
+                            <option value="">Select Subject</option>
+                            <option v-for="sub in subjects" :key="sub.id" :value="sub.id">
+                                {{ sub.name }}
+                            </option>
+                        </select>
+
+                        <!-- Topic -->
                         <input v-model="form.topic" placeholder="Topic" class="border p-2"/>
                         <input v-model="form.sub_topic" placeholder="Sub Topic" class="border p-2"/>
                         <input v-model="form.section" placeholder="Section" class="border p-2"/>
                         <input v-model="form.sub_section" placeholder="Sub Section" class="border p-2"/>
                         <input v-model="form.category" placeholder="Category" class="border p-2"/>
                         <input v-model="form.board" placeholder="Board" class="border p-2"/>
-                        <input v-model="form.year" placeholder="Year" class="border p-2"/>
-                        <input v-model="form.class" placeholder="Class" class="border p-2"/>
+
+                        <!-- Year Dropdown -->
+                        <label class="font-semibold">Year</label>
+                        <select v-model="form.year" class="border p-2">
+                            <option value="">Select Year</option>
+                            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                        </select>
+
+                        <!-- Class Dropdown -->
+                        <label class="font-semibold">Class</label>
+                        <select v-model="form.class" class="border p-2">
+                            <option value="">Select Class</option>
+                            <option v-for="c in classes" :key="c.value" :value="c.value">{{ c.text }}</option>
+                        </select>
                     </div>
 
+                    <!-- Upload Image -->
+                    <label class="font-semibold mt-2">Upload Image</label>
+                    <input type="file" @change="previewImage" class="w-full border p-2"/>
+                    <img v-if="preview" :src="preview" class="h-32 mt-2 border" />
+
                     <!-- Submit -->
-                    <button
-                        @click="submit"
+                    <button @click="submit"
                         class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                        :disabled="form.processing"
-                    >
+                        :disabled="form.processing">
                         Save Post
                     </button>
 

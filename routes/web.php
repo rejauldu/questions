@@ -12,7 +12,9 @@ use App\Http\Controllers\SubjectDateController;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/questions/list', [PageController::class, 'list'])->name('questions.list');
-Route::resource('questions', QuestionController::class);
+Route::resource('questions', QuestionController::class)->except(['show']);;
+Route::get('/questions/{question}/{slug?}', [QuestionController::class, 'show'])
+    ->name('questions.show');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::get('/search', [QuestionController::class, 'search'])->name('search');
@@ -27,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 });
 Route::middleware(['web'])->group(function () {

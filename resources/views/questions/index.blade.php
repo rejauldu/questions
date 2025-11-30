@@ -1,97 +1,132 @@
 @extends('layout')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-3 sm:py-6 px-2 lg:px-4"> 
+<div class="min-h-screen bg-secondary-100">
+    <div class="max-w-7xl mx-auto bg-white shadow-2xl rounded-xl p-1 sm:p-2 md:p-4">
 
-    {{-- Search Box --}}
-    <form method="GET" action="{{ route('questions.index') }}" class="mb-3 sm:mb-4 flex">
-        <input 
-            type="text" 
-            name="q"
-            value="{{ request('q') }}"
-            placeholder="Search questions..."
-            class="w-full p-3 border border-gray-300 rounded-l-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm border-r-0"
-        >
-        <button 
-            type="submit"
-            class="bg-indigo-600 text-white p-2 rounded-r-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 flex items-center justify-center min-w-10"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-        </button>
-    </form>
+        {{-- Page Header --}}
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-700 mb-1 sm:mb-2 md:mb-4 border-b pb-2 sm:pb-3 text-center">
+            Question Bank Text Search
+        </h1>
 
-    {{-- Questions Container --}}
-    <div id="questions-container" class="space-y-3 sm:space-y-4"> 
-        @foreach ($posts as $index => $post)
-            <a href="{{ route('questions.show', $post->id) }}" class="block group question-card">
-                <div class="p-3 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 border-t-3 border-indigo-600 transform hover:bg-gray-100">
-                    
-                    {{-- Meta --}}
-                    <div class="flex justify-end text-right text-xs sm:text-sm font-semibold text-yellow-700 mb-2 sm:mb-3 flex-wrap gap-x-2 sm:gap-x-4">
-                        <h4>
-                            {{ implode(' - ', array_filter([
-                                explode('/', $post->institution->name)[0] ?? null,
-                                $post->subject->name ?? null,
-                                $post->class ?? null,
-                                $post->topic ?? null,
-                                $post->board ?? null,
-                                $post->year ?? null
-                            ])) }}
-                        </h4>
-                    </div>
+        {{-- Search Box & Filters Container --}}
+        <div class="mb-6 sm:mb-8 p-4 sm:p-6 bg-primary-50 rounded-xl shadow-inner">
+            <form method="GET" action="{{ route('questions.index') }}" class="flex gap-2">
+                
+                {{-- Go to More Filters Button --}}
+                <a href="{{ route('search') }}"
+                   class="bg-secondary-200 text-primary-600 border border-primary-600 px-3 sm:px-4 py-2 rounded-lg shadow-sm hover:bg-primary-50 flex items-center justify-center gap-1 min-w-10 transition duration-150 text-sm sm:text-base flex-shrink-0">
+                    <x-icons.funnel/>
+                    <span class="hidden sm:inline">More Filter</span>
+                </a>
+                
+                {{-- Text Search Input --}}
+                <input 
+                    type="text" 
+                    name="q"
+                    value="{{ request('q') }}"
+                    placeholder="Search questions by text..."
+                    class="flex-1 p-3 border border-secondary-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                >
 
-                    {{-- Question --}}
-                    <div class="px-2 text-sm sm:text-base text-gray-800 mb-2 pb-2 border-b border-gray-100">
-                        <span class="font-black text-indigo-600 text-lg mr-2">{{ $index + 1 }}.</span>
-                        {!! $post->article !!}
-                    </div>
+                {{-- Search Button --}}
+                <button 
+                    type="submit"
+                    class="bg-primary-600 text-white px-3 sm:px-4 py-2 rounded-lg shadow-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150 flex items-center justify-center text-sm sm:text-base min-w-10 flex-shrink-0"
+                >
+                    <x-icons.search/>
+                    <span class="hidden sm:inline ml-1">Search</span>
+                </button>
 
-                    {{-- Options --}}
-                    <div class="grid grid-cols-1 gap-1 sm:gap-2 text-gray-700 text-xs sm:text-sm"> 
-                        <p class="p-2 rounded-md bg-gray-50 border border-gray-200 flex items-start">
-                            <span class="font-bold text-indigo-500 min-w-4 inline-block mr-1 sm:mr-2">ক)</span> 
-                            <span class="flex-1">{!! $post->a !!}</span>
-                        </p>
-                        <p class="p-2 rounded-md bg-gray-50 border border-gray-200 flex items-start">
-                            <span class="font-bold text-indigo-500 min-w-4 inline-block mr-1 sm:mr-2">খ)</span> 
-                            <span class="flex-1">{!! $post->b !!}</span>
-                        </p>
-                        <p class="p-2 rounded-md bg-gray-50 border border-gray-200 flex items-start">
-                            <span class="font-bold text-indigo-500 min-w-4 inline-block mr-1 sm:mr-2">গ)</span> 
-                            <span class="flex-1">{!! $post->c !!}</span>
-                        </p>
-                        <p class="p-2 rounded-md bg-gray-50 border border-gray-200 flex items-start">
-                            <span class="font-bold text-indigo-500 min-w-4 inline-block mr-1 sm:mr-2">ঘ)</span> 
-                            <span class="flex-1">{!! $post->d !!}</span>
-                        </p>
-                    </div>
-
-                    {{-- Answer (Always Visible) --}}
-                    <div class="mt-2">
-                        <div class="p-2 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-300 font-semibold flex items-center shadow-inner">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-yellow-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span class="uppercase text-xs tracking-wider">Answer:</span> 
-                            <span class="ml-1 text-base font-extrabold text-green-700">{{ $post->answer }}</span>
+            </form>
+        </div>
+        
+        {{-- Results Count --}}
+        <p class="text-sm sm:text-base font-semibold text-secondary-700 mb-4">
+            Showing {{ $posts->count() }} of {{ $posts->total() }} Questions (10 per page)
+        </p>
+        
+        {{-- Questions Container --}}
+        @if ($posts->isEmpty())
+            <div class="text-center py-8 sm:py-16 bg-warning-50 rounded-lg border border-warning-200">
+                <p class="text-lg sm:text-xl text-warning-700 font-medium">No questions matched your search criteria.</p>
+                <p class="text-xs sm:text-sm text-warning-600 mt-1 sm:mt-2">Try adjusting your search terms.</p>
+            </div>
+        @else
+            <div id="questions-container" class="space-y-6 sm:space-y-8"> 
+                @foreach ($posts as $post)
+                    <div class="border border-secondary-200 p-4 sm:p-6 rounded-xl bg-white shadow-lg hover:shadow-xl transition">
+                        
+                        {{-- Top Bar: Meta and Copy Button --}}
+                        <div class="flex justify-between items-start mb-2 sm:mb-3">
+                            {{-- Meta --}}
+                            <div class="text-xs sm:text-sm font-semibold text-warning-700 flex flex-wrap gap-x-2 sm:gap-x-4 justify-start">
+                                <h4>{{ $q_meta = question_meta_text($post) }}</h4>
+                            </div>
+                            
+                            {{-- Copy Button --}}
+                            @php
+                                $copy_data = $post->url
+                                    ? strip_tags($post->article)
+                                    : strip_tags($post->article) . "\n\nক) " . strip_tags($post->a) . "\nখ) " . strip_tags($post->b) . "\nগ) " . strip_tags($post->c) . "\nঘ) " . strip_tags($post->d);
+                            @endphp
+                            <button class="copy-btn flex items-center gap-1 text-secondary-500 hover:text-secondary-700 text-xs sm:text-sm font-medium transition duration-150 ease-in-out flex-shrink-0 whitespace-nowrap" data-copy="{{ $copy_data }}">
+                                <x-icons.copy />
+                                Copy
+                            </button>
                         </div>
+                        
+                        {{-- Main clickable question area --}}
+                        <a href="{{ route('questions.show', ['question' => $post->id, 'slug' => url_slug($post->article, $q_meta)]) }}" 
+                           class="block group question-card-link pt-2 border-t border-secondary-100">
+                            
+                            @if ($post->url)
+                                <div class="mb-2 sm:mb-2">
+                                    <h3 class="ml-1 sm:ml-2 text-base sm:text-lg md:text-lg font-bold text-secondary-900 mb-2 line-clamp-2">
+                                        {!! $post->article !!}
+                                    </h3>
+                                    <div class="ml-1 sm:ml-2">
+                                        <img src="{{ asset('storage/' . $post->url) }}" 
+                                             alt="Question Image" 
+                                             class="h-20 w-20 object-contain rounded-lg shadow-inner border border-secondary-200"
+                                             style="height: 80px; width: 80px;" />
+                                    </div>
+                                </div>
+                            @else
+                                <div class="mb-2 sm:mb-4">
+                                    <h3 class="ml-1 sm:ml-2 text-base sm:text-lg md:text-lg font-bold text-secondary-900 line-clamp-2">
+                                        {!! $post->article !!}
+                                    </h3>
+                                </div>
+                                <div class="space-y-1 sm:space-y-2 text-secondary-700 ml-1 sm:ml-2 text-xs sm:text-sm">
+                                    <p class="line-clamp-1">ক) {!! $post->a !!}</p>
+                                    <p class="line-clamp-1">খ) {!! $post->b !!}</p>
+                                    <p class="line-clamp-1">গ) {!! $post->c !!}</p>
+                                    <p class="line-clamp-1">ঘ) {!! $post->d !!}</p>
+                                </div>
+                            @endif
+                        </a>
                     </div>
+                @endforeach
+            </div>
 
-                </div>
-            </a>
-        @endforeach
+            {{-- Pagination --}}
+            <div class="mt-6 sm:mt-8 flex justify-center">
+                {{ $posts->links() }}
+            </div>
+        @endif
+
     </div>
-
 </div>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.MathJax) {
         MathJax.typesetPromise();
-    });
+    }
+});
 </script>
 @endpush

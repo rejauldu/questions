@@ -29,7 +29,8 @@ class Post extends Model
         'board',
         'year',
         'class',
-        'institution_id'
+        'institution_id',
+        'url'
     ];
 
     protected $casts = [

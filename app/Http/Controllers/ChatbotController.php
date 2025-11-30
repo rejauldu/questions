@@ -18,7 +18,7 @@ use Carbon\Carbon;
 
 class ChatbotController extends Controller
 {
-    private const DS_TOKEN = "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"; // Truncated example
+    private const DS_TOKEN = "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"; // Truncated example
     private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     private const LLM_MODEL = 'x-ai/grok-4.1-fast';
 
