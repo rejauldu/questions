@@ -220,8 +220,7 @@ class QuestionController extends Controller
                          ->with('success', 'Question deleted successfully.');
     }
 
-    public function search(Request $request)
-    {
+    public function search(Request $request) {
         // 1. Fetch available filter options
         $filters = $this->getAvailableFilters();
 
@@ -251,20 +250,8 @@ class QuestionController extends Controller
             $query->where('category', $request->category);
         }
 
-        // Apply full-text search term
-        if ($request->filled('search_term')) {
-            $searchTerm = $request->search_term;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('article', 'like', "%{$searchTerm}%")
-                  ->orWhere('a', 'like', "%{$searchTerm}%")
-                  ->orWhere('b', 'like', "%{$searchTerm}%")
-                  ->orWhere('c', 'like', "%{$searchTerm}%")
-                  ->orWhere('d', 'like', "%{$searchTerm}%");
-            });
-        }
-        
-        // Results are limited to 10 as per request
-        $perPage = 10; 
+        // Pagination limit
+        $perPage = 10;
 
         // Fetch results with pagination
         $posts = $query->with(['institution', 'subject'])
@@ -276,16 +263,21 @@ class QuestionController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        // 3. Return the Blade view with data
+        // 3. Prepare currentParams with readable names
+        $currentParams = array_merge($request->all(), [
+            'institution_name' => $request->filled('institution_id') 
+                ? Institution::find($request->institution_id)?->name 
+                : null,
+            'subject_name' => $request->filled('subject_id') 
+                ? Subject::find($request->subject_id)?->name 
+                : null,
+        ]);
+
+        // 4. Return the Blade view with data
         return view('pages.search', [
             'initialFilters' => $filters,
             'posts' => $posts,
-            // Add institution name to currentParams if an ID is present, for pre-filling the text input
-            'currentParams' => array_merge($request->all(), [
-                'institution_name' => $request->filled('institution_id') 
-                    ? Institution::find($request->institution_id)?->name 
-                    : null
-            ]),
+            'currentParams' => $currentParams,
         ]);
     }
 

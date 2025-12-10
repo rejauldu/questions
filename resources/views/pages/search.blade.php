@@ -1,4 +1,57 @@
 @extends('layout')
+@section('seo')
+@php
+    // Collect all active filters in order
+    $activeFilters = [];
+
+    if (!empty($currentParams['institution_name'])) {
+        $activeFilters[] = firstpart($currentParams['institution_name']);
+    }
+    if (!empty($currentParams['subject_name'])) {
+        $activeFilters[] = $currentParams['subject_name'];
+    }
+    if (!empty($currentParams['class'])) {
+        $activeFilters[] = ordinal_suffix($currentParams['class']) . ' year';
+    }
+    if (!empty($currentParams['year'])) {
+        $activeFilters[] = $currentParams['year'];
+    }
+    if (!empty($currentParams['topic'])) {
+        $activeFilters[] = $currentParams['topic'];
+    }
+    if (!empty($currentParams['chapter'])) {
+        $activeFilters[] = $currentParams['chapter'];
+    }
+    if (!empty($currentParams['section'])) {
+        $activeFilters[] = $currentParams['section'];
+    }
+    if (!empty($currentParams['sub_section'])) {
+        $activeFilters[] = $currentParams['sub_section'];
+    }
+    if (!empty($currentParams['category'])) {
+        $activeFilters[] = ucfirst($currentParams['category']);
+    }
+
+    // SEO Keyword: join filters with comma for better indexing
+    $searchKeyword = !empty($activeFilters) ? implode(" ", $activeFilters) : "Filtered Questions";
+
+    // SEO Title
+    $title = "$searchKeyword - Questions & Solutions | ExamDao";
+
+    // SEO Description: include all filters
+    $description = "Explore questions on ExamDao";
+    if (!empty($activeFilters)) {
+        $description .= " filtered by " . implode(" ", $activeFilters);
+    }
+    $description .= ". Access chapter-wise questions, past papers, model tests, and verified solutions for SSC, HSC, Admission, NU & BCS exams.";
+
+    // OG Image
+    $image = url('/images/og-home.webp');
+
+    // Canonical URL
+    $canonical = url()->current();
+@endphp
+@endsection
 
 @section('content')
 <div class="min-h-screen bg-secondary-100">

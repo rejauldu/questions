@@ -46,11 +46,11 @@
             <h3 class="text-2xl font-bold text-primary-700 mb-6">Key Exam Preparation Areas</h3>
             <div class="flex flex-wrap justify-center gap-3 sm:gap-4">
                 {{-- Example Subject Tags --}}
-                <a href="{{ route('search', ['subject' => 'Physics']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Physics</a>
-                <a href="{{ route('search', ['subject' => 'Chemistry']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Chemistry</a>
-                <a href="{{ route('search', ['subject' => 'Math']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Higher Math</a>
-                <a href="{{ route('search', ['subject' => 'Biology']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Biology</a>
-                <a href="{{ route('search') }}" class="bg-primary-600 text-white font-medium px-4 py-2 rounded-full hover:bg-primary-700 transition">Explore All Subjects &rarr;</a>
+                <a href="{{ route('questions.index', ['q' => 'Physics']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Physics</a>
+                <a href="{{ route('questions.index', ['q' => 'Chemistry']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Chemistry</a>
+                <a href="{{ route('questions.index', ['q' => 'Math']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Higher Math</a>
+                <a href="{{ route('questions.index', ['q' => 'Biology']) }}" class="bg-primary-100 text-primary-700 font-medium px-4 py-2 rounded-full hover:bg-primary-200 transition">Biology</a>
+                <a href="{{ route('questions.index') }}" class="bg-primary-600 text-white font-medium px-4 py-2 rounded-full hover:bg-primary-700 transition">Explore All Subjects &rarr;</a>
             </div>
         </div>
     </div>

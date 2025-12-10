@@ -81,3 +81,21 @@ if (!function_exists('question_meta_text')) {
         return implode(' - ', $parts);
     }
 }
+
+if (!function_exists('firstPart')) {
+    /**
+     * Return the first part of a string separated by slash (/)
+     *
+     * @param string|null $name
+     * @return string|null
+     */
+    function firstPart(?string $name): ?string
+    {
+        if (!$name) return null;
+
+        // Split by slash and trim whitespace
+        $parts = explode('/', $name);
+
+        return trim($parts[0]);
+    }
+}

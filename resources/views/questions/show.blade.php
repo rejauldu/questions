@@ -1,5 +1,53 @@
 @extends('layout')
 
+@section('seo')
+@php
+    // Collect question meta parts in the same sequence as question_meta_text()
+    $seoParts = [];
+
+    // Institution (first part)
+    if (!empty($post->institution->name)) {
+        $seoParts[] = explode('/', $post->institution->name)[0];
+    }
+
+    // Subject
+    if (!empty($post->subject->name)) {
+        $seoParts[] = $post->subject->name;
+    }
+
+    // Class with ordinal
+    if (!empty($post->class)) {
+        $seoParts[] = ordinal_suffix($post->class) . ' year';
+    }
+
+    // Board
+    if (!empty($post->board)) {
+        $seoParts[] = $post->board;
+    }
+
+    // Year
+    if (!empty($post->year)) {
+        $seoParts[] = $post->year;
+    }
+
+    // SEO Keyword/Title: combine all parts and append site branding
+    $title = implode(' - ', $seoParts) . ' - Questions & Solutions | ExamDao';
+
+    // SEO Description: include full question text + meta parts
+    $questionText = strip_tags($post->article);
+    $questionText = mb_strlen($questionText) > 150 ? mb_substr($questionText, 0, 147) . '...' : $questionText;
+
+    $description = "$questionText | " . implode(', ', $seoParts) . ". Access chapter-wise questions, past papers, model tests, and verified solutions for SSC, HSC, Admission, NU & BCS exams on ExamDao.";
+
+    // OG Image
+    $image = url('/images/og-home.webp');
+
+    // Canonical URL
+    $canonical = url()->current();
+@endphp
+@endsection
+
+
 @section('content')
 
 <div class="min-h-screen bg-secondary-100">

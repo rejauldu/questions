@@ -1,4 +1,23 @@
 @extends('layout')
+@section('seo')
+@php
+    $query = request('q'); // User search text
+
+    // If user entered a search query, emphasize it in the title
+    $title = $query
+        ? "\"$query\" Questions & Solutions - ExamDao"
+        : "Search - ExamDao";
+
+    // Description: naturally include the keyword first
+    $description = $query
+        ? "Explore questions related to \"$query\" from SSC, HSC, Admission, NU, and BCS exams on ExamDao. Access chapter-wise solutions, past questions, and model tests."
+        : "Search SSC, HSC, Admission, NU, and BCS question banks on ExamDao. Find questions by keywords, topics, or subjects.";
+
+    // OG Image
+    $image = url('/images/og-home.webp'); // reuse home OG or create a search-specific OG
+    $canonical = url()->current();
+@endphp
+@endsection
 
 @section('content')
 <div class="min-h-screen bg-secondary-100">
