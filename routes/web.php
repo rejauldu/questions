@@ -5,10 +5,12 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubjectDateController;
+use App\Http\Controllers\SitemapController;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/questions/list', [PageController::class, 'list'])->name('questions.list');
@@ -18,17 +20,20 @@ Route::get('/questions/{question}/{slug?}', [QuestionController::class, 'show'])
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::get('/search', [QuestionController::class, 'search'])->name('search');
+Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/chatbot/{id?}', [ChatbotController::class, 'chatbot'])->name('chatbot');
-    Route::post('/chat/send', [ChatbotController::class, 'sendMessage'])
-    ->name('api.chat.send');
+    Route::post('/chat/send', [ChatbotController::class, 'sendMessage'])->name('api.chat.send');
+    Route::post('/questions/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/sitemap', [SitemapController::class, 'generate']);
 });
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');

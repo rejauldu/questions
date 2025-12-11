@@ -10,13 +10,18 @@ if (!function_exists('url_slug')) {
             return $fallback;
         }
 
-        $text = mb_strtolower($text, 'UTF-8'); // Keep Unicode
-        $text = preg_replace('/[^\p{L}\p{N}\s-]/u', '', $text); // Keep letters (any language) and numbers
-        $text = preg_replace('/[\s_]+/u', '-', $text);           // Replace spaces/underscores with -
-        $text = preg_replace('/-+/u', '-', $text);               // Merge multiple dashes
+        $text = mb_strtolower($text, 'UTF-8');
+
+        // Keep letters (\p{L}), numbers (\p{N}) and combining marks (\p{M})
+        $text = preg_replace('/[^\p{L}\p{N}\p{M}]+/u', '-', $text);
+
+        // Merge multiple dashes
+        $text = preg_replace('/-+/u', '-', $text);
+
+        // Trim dashes
         $text = trim($text, '-');
 
-        return mb_substr($text, 0, 100, 'UTF-8');
+        return mb_substr($text, 0, 100, 'UTF-8') ?: $fallback;
     }
 }
 

@@ -144,47 +144,7 @@
         </div>
 
         {{-- Discussion Section --}}
-        <div class="mt-8">
-            <h2 class="text-2xl font-extrabold text-secondary-900 mb-6 border-b pb-3 border-primary-300">
-                Discussion ({{ count($comments ?? []) }})
-            </h2>
-
-            <div class="bg-white p-5 rounded-xl shadow-lg mb-8">
-                <h3 class="text-lg font-bold text-secondary-800 mb-4">Post a Comment</h3>
-                <form action="{{ url('/comments/' . ($post->id ?? 'q-1234')) }}" method="POST">
-                    @csrf
-                    <textarea name="body" rows="3" class="w-full p-3 border-2 border-secondary-300 rounded-lg focus:border-primary-500 focus:ring focus:ring-primary-200 transition duration-150 resize-none text-sm" placeholder="Share your thoughts or ask a follow-up question..." required></textarea>
-                    <div class="flex justify-end mt-3">
-                        <button type="submit" class="bg-primary-600 text-white px-5 py-2 rounded-full text-sm font-bold shadow-md hover:bg-primary-700 transition duration-200 transform hover:scale-[1.02]">
-                            Submit Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="space-y-4">
-                @forelse ($comments ?? [] as $comment)
-                <div class="bg-white p-4 rounded-xl shadow border-l-4 border-secondary-200">
-                    <div class="flex items-center mb-2">
-                        <div class="w-7 h-7 rounded-full bg-info-100 text-info-700 font-bold flex items-center justify-center text-xs mr-3 flex-shrink-0">
-                            {{ substr($comment->user_name ?? 'Student', 0, 1) }}
-                        </div>
-                        <div>
-                            <p class="font-bold text-sm text-secondary-900">{{ $comment->user_name ?? 'Anonymous Student' }}</p>
-                            <p class="text-xs text-secondary-500">{{ $comment->created_at ?? 'Just now' }}</p>
-                        </div>
-                    </div>
-                    <p class="text-secondary-700 leading-relaxed text-sm pl-10">
-                        {{ $comment->body }}
-                    </p>
-                </div>
-                @empty
-                <p class="text-center text-secondary-500 text-sm p-6 bg-secondary-50 rounded-lg border border-dashed border-secondary-300">
-                    No discussion yet. Be the first to post a comment!
-                </p>
-                @endforelse
-            </div>
-        </div>
+        @include('partials.discussion-section', ['post' => $post, 'comments' => $post->comments])
     </div>
 </div>
 @endsection

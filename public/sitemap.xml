@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    <url>
+        <loc>http://ict</loc>
+        <priority>1.0</priority>
+    </url>
+
+            
+        <url>
+            <loc>http://ict/questions/6/hsc-bangla</loc>
+            <lastmod>2025-11-27T11:42:36+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+            
+        <url>
+            <loc>http://ict/questions/5/hsc-ict</loc>
+            <lastmod>2025-11-27T11:26:57+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+            
+        <url>
+            <loc>http://ict/questions/4/%E0%A6%AE%E0%A6%BF-%E0%A6%B0%E0%A6%AB%E0%A6%BF%E0%A6%95-%E0%A6%8F%E0%A6%95%E0%A6%9C%E0%A6%A8-%E0%A6%AC%E0%A6%BF%E0%A6%96%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%A4-%E0%A6%97%E0%A6%AC%E0%A7%87%E0%A6%B7%E0%A6%95-%E0%A6%A4%E0%A6%BF%E0%A6%A8%E0%A6%BF-%E0%A6%8F%E0%A6%AC%E0%A6%82-%E0%A6%A4%E0%A6%BE%E0%A6%B0-%E0%A6%A6%E0%A6%B2-%E0%A6%AA%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%AA%E0%A6%B2-%E0%A6%95%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%B0-%E0%A6%AC%E0%A7%87%E0%A6%97%E0%A7%81%E0%A6%A8%E0%A6%BF-%E0%A6%B0%E0%A6%82-%E0%A6%8F%E0%A6%B0-%E0%A6%89%E0%A6%AB%E0%A6%B6%E0%A7%80-%E0%A6%A7%E0%A6%BE%E0%A6%A8-%E0%A6%86%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%B0-%E0%A6%95%E0%A6%B0%E0%A7%87%E0%A6%A8-%E0%A6%AE%E0%A6%BF-%E0%A6%B0%E0%A6%AB%E0%A6%BF%E0%A6%95%E0%A7%87</loc>
+            <lastmod>2025-11-21T15:11:43+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+            
+        <url>
+            <loc>http://ict/questions/3/frac-abcd-xyz</loc>
+            <lastmod>2025-11-21T15:10:43+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+            
+        <url>
+            <loc>http://ict/questions/2/frac-x-y</loc>
+            <lastmod>2025-11-21T15:10:03+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+            
+        <url>
+            <loc>http://ict/questions/1/frac-x-y</loc>
+            <lastmod>2025-11-21T15:06:25+00:00</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.80</priority>
+        </url>
+    
+</urlset>

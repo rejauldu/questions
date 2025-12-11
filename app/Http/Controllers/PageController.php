@@ -27,4 +27,16 @@ class PageController extends Controller
     {
         return Inertia::render('Dashboard');
     }
+    public function privacy()
+    {
+        return view('pages.privacy');
+    }
+    public function terms()
+    {
+        return view('pages.terms');
+    }
+    public function about()
+    {
+        return view('pages.about');
+    }
 }

@@ -48,9 +48,9 @@
 
             <div class="hidden md:inline-block">
                 @guest
-                    <a href="{{ url('/register') }}"
+                    <a href="{{ url('/login') }}"
                         class="bg-yellow-400 text-indigo-800 px-6 py-2.5 rounded-full text-base font-bold shadow-md hover:bg-yellow-300 transition duration-150 transform hover:scale-[1.02]">
-                        Registration
+                        Login
                     </a>
                 @endguest
                 
