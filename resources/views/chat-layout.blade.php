@@ -7,7 +7,7 @@
         
         <!-- Vite/CSS/JS Assets are still required for Tailwind and Vue -->
         <!-- Vite + CSS -->
-        @vite(['resources/css/chatbot.css', 'resources/js/chatbot.js'])
+        @vite(['resources/css/app.css', 'resources/js/chatbot.js'], 'build/chatbot')
     </head>
     <body class="bg-gray-50 antialiased">
         <!-- This is the Inertia Root directive, now inside the new layout -->

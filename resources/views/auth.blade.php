@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title inertia>{{ config('app.name', 'Laravel') }}</title>
+    <title inertia>{{ config('app.name', 'ExamDao') }}</title>
     
     <!-- Scripts -->
     @routes
-    @vite(['resources/css/chatbot.css', 'resources/js/chatbot.js'])
+    @vite(['resources/css/app.css', 'resources/js/chatbot.js'], 'build/chatbot')
     @inertiaHead
 </head>
 <body>

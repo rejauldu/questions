@@ -62,19 +62,4 @@ export default {
     },
 
     plugins: [forms],
-
-    // These classes are explicitly added so Tailwind doesn't tree-shake them if they aren't directly in the content files.
-    safelist: [
-        "fixed",
-        "left-0",
-        "top-0",
-        "z-50",
-        "w-64",
-        "h-full",
-        "shadow-lg",
-        "hidden",
-        "w-1/4",
-        "max-w-[20rem]",
-        "w-16",
-    ],
 }

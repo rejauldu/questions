@@ -105,7 +105,7 @@
                                         {!! $post->article !!}
                                     </h3>
                                     <div class="ml-1 sm:ml-2">
-                                        <img src="{{ asset('storage/' . $post->url) }}" 
+                                        <img src="{{ asset($post->url) }}" 
                                              alt="Question Image" 
                                              class="h-20 w-20 object-contain rounded-lg shadow-inner border border-secondary-200"
                                              style="height: 80px; width: 80px;" />

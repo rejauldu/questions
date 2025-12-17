@@ -7,7 +7,6 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
-
 defineProps({
     canResetPassword: {
         type: Boolean,
@@ -41,7 +40,7 @@ const submit = () => {
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="login" value="Email or Phone" />
+                <InputLabel for="login" value="Phone or Email" />
 
                 <TextInput
                     id="login"
@@ -79,12 +78,22 @@ const submit = () => {
             </div>
 
             <div class="mt-4 flex items-center justify-end">
+                <!-- Forgot password intentionally disabled -->
+                <!--
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                     Forgot your password?
+                </Link>
+                -->
+
+                <Link
+                    :href="route('register')"
+                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    Create an account
                 </Link>
 
                 <PrimaryButton

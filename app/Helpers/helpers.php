@@ -104,3 +104,15 @@ if (!function_exists('firstPart')) {
         return trim($parts[0]);
     }
 }
+if (!function_exists('public_html_path')) {
+    /**
+     * Get the path to the public_html folder.
+     *
+     * @param  string  $path
+     * @return string
+     */
+    function public_html_path($path = '')
+    {
+        return base_path('public_html' . ($path ? DIRECTORY_SEPARATOR . $path : ''));
+    }
+}

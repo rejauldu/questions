@@ -63,7 +63,7 @@
         {{-- Filter Section --}}
         <div class="mb-6 sm:mb-8 p-4 sm:p-6 bg-primary-50 rounded-xl shadow-inner">
             <form id="search-form" method="GET" action="{{ route('search') }}">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-4 sm:mb-6 items-end">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 sm:mb-6 items-end">
 
                     <div class="col-span-1">
                         <label for="institution_id" class="block text-xs sm:text-sm font-medium text-secondary-700 mb-1">Institution</label>
@@ -196,7 +196,7 @@
                                         </h3>
 
                                         <div class="ml-1 sm:ml-2">
-                                            <img src="{{ asset('storage/' . $post->url) }}" 
+                                            <img src="{{ asset($post->url) }}" 
                                                 alt="Question Image" 
                                                 class="h-20 w-20 object-contain rounded-lg shadow-inner border border-secondary-200"
                                                 style="height: 80px; width: 80px;" />

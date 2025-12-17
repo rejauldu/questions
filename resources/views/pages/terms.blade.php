@@ -2,8 +2,8 @@
 
 @section('seo')
 @php
-    $title = "Terms of Service - ExamDAO";
-    $description = "Read ExamDAO's Terms of Service, covering user registration, platform usage, intellectual property rights over question bank content, and acceptable behavior.";
+    $title = "Terms of Service - ExamDao";
+    $description = "Read ExamDao's Terms of Service, covering user registration, platform usage, intellectual property rights over question bank content, and acceptable behavior.";
     $canonical = url()->current();
 @endphp
 @endsection
@@ -14,11 +14,11 @@
 
             {{-- Page Header --}}
             <header class="text-center mb-10">
-                <h1 class="text-5xl font-extrabold text-gray-900" style="color: #4338ca;">
+                <h1 class="text-5xl font-extrabold text-indigo-700">
                     Terms of Service
                 </h1>
                 <p class="mt-3 text-lg text-gray-500">
-                    Effective Date: December 11, 2025
+                    Effective Date: December 14, 2025
                 </p>
             </header>
             
@@ -26,11 +26,11 @@
 
                 {{-- 1. Acceptance of Terms --}}
                 <section>
-                    <h2 class="text-3xl font-bold mb-4 border-b pb-2" style="border-color: #4338ca; color: #4338ca;">
+                    <h2 class="text-3xl font-bold mb-4 border-b border-indigo-700 pb-2 text-indigo-700">
                         1. Agreement to Terms
                     </h2>
                     <p>
-                        These Terms of Service (the "Terms") constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you"), and **ExamDAO** concerning your access to and use of the <a href="{{ url('/') }}" class="font-semibold" style="color: #4338ca;">ExamDAO.com</a> website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
+                        These Terms of Service (the "Terms") constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you"), and <span class="font-bold">ExamDao</span> concerning your access to and use of the <a href="{{ url('/') }}" class="font-semibold text-indigo-700 hover:text-indigo-900 transition-colors">examdao.com</a> website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
                     </p>
                     <p class="mt-4">
                         You agree that by accessing the Site, you have read, understood, and agreed to be bound by all of these Terms of Service. If you do not agree with all of these Terms of Service, then you are expressly prohibited from using the Site and you must discontinue use immediately.
@@ -39,20 +39,20 @@
 
                 {{-- 2. User Registration and Account Security --}}
                 <section>
-                    <h2 class="text-3xl font-bold mb-4 border-b pb-2" style="border-color: #4338ca; color: #4338ca;">
+                    <h2 class="text-3xl font-bold mb-4 border-b border-indigo-700 pb-2 text-indigo-700">
                         2. User Registration
                     </h2>
                     <p>
-                        To use some of the services on the Site, you may be required to register with ExamDAO. You agree to keep your password confidential and will be responsible for all use of your account and password. We reserve the right to remove, reclaim, or change a username you select if we determine, in our sole discretion, that such username is inappropriate, obscene, or otherwise objectionable.
+                        To use some of the services on the Site, you may be required to register with <span class="font-bold">ExamDao</span>. You agree to keep your password confidential and will be responsible for all use of your account and password. We reserve the right to remove, reclaim, or change a username you select if we determine, in our sole discretion, that such username is inappropriate, obscene, or otherwise objectionable.
                     </p>
                     <p class="mt-3">
-                        **Age Restriction:** Use of the Site is limited to users who are at least 13 years of age. Users under the age of 18 should review these terms with a parent or guardian.
+                        <span class="font-bold">Age Restriction:</span> Use of the Site is limited to users who are at least 13 years of age. Users under the age of 18 should review these terms with a parent or guardian.
                     </p>
                 </section>
 
-                {{-- 3. Intellectual Property Rights (Crucial for a content site) --}}
+                {{-- 3. Intellectual Property Rights --}}
                 <section>
-                    <h2 class="text-3xl font-bold mb-4 border-b pb-2" style="border-color: #4338ca; color: #4338ca;">
+                    <h2 class="text-3xl font-bold mb-4 border-b border-indigo-700 pb-2 text-indigo-700">
                         3. Intellectual Property Rights
                     </h2>
                     <p>
@@ -70,7 +70,7 @@
 
                 {{-- 4. Prohibited Activities --}}
                 <section>
-                    <h2 class="text-3xl font-bold mb-4 border-b pb-2" style="border-color: #4338ca; color: #4338ca;">
+                    <h2 class="text-3xl font-bold mb-4 border-b border-indigo-700 pb-2 text-indigo-700">
                         4. Prohibited Activities
                     </h2>
                     <p>
@@ -85,17 +85,17 @@
 
                 {{-- 5. Contact Information --}}
                 <section>
-                    <h2 class="text-3xl font-bold mb-4 border-b pb-2" style="border-color: #4338ca; color: #4338ca;">
+                    <h2 class="text-3xl font-bold mb-4 border-b border-indigo-700 pb-2 text-indigo-700">
                         5. Governing Law and Contact
                     </h2>
                     <p>
-                        These Terms shall be governed by and defined by the laws of **Bangladesh**. Any dispute arising under them shall be subject to the exclusive jurisdiction of the courts of Bangladesh.
+                        These Terms shall be governed by and defined by the laws of <span class="font-bold">Bangladesh</span>. Any dispute arising under them shall be subject to the exclusive jurisdiction of the courts of Bangladesh.
                     </p>
                     <p class="mt-3">
                         For any questions regarding these Terms, please contact us at:
                     </p>
                     <ul class="mt-3 ml-4 space-y-2 font-semibold">
-                        <li><strong>Email:</strong> <a href="mailto:examdao@gmail.com" style="color: #4338ca;" class="hover:text-yellow-500">examdao@gmail.com</a></li>
+                        <li>Email: <a href="mailto:info@examdao.com" class="text-indigo-700 hover:text-yellow-600 transition-colors">info@examdao.com</a></li>
                     </ul>
                 </section>
 

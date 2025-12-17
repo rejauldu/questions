@@ -87,7 +87,7 @@
             {{-- Image Display --}}
             @if ($post->url)
                 <div class="mb-4 p-3 bg-white rounded-lg border border-secondary-200 flex justify-center">
-                    <img src="{{ asset('storage/' . $post->url) }}" 
+                    <img src="{{ asset($post->url) }}" 
                          alt="Question Diagram/Image" 
                          class="max-w-full h-auto object-contain rounded-lg max-h-[300px] w-auto" />
                 </div>

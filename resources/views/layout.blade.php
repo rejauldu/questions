@@ -58,8 +58,6 @@
     {{-- App Icons, Favicons, Manifest --}}
     {{-- ============================= --}}
 
-    <link rel="manifest" href="/manifest.json">
-
     {{-- Standard favicon --}}
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -76,7 +74,7 @@
     @yield('seo')
 
     {{-- CSS + JS --}}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'], 'build/front')
 </head>
 
 <body class="bg-gray-50 text-gray-800">

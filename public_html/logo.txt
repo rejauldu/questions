@@ -1,0 +1,3 @@
+Font: Brush Script MT
+Color: #4338ca
+Expand: 10

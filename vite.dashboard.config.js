@@ -4,12 +4,12 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     server: {
-        host: 'ict',
+        host: 'examdao.com',
         port: 5175,
         cors: true,
         hmr: {
-            host: 'ict',
-            protocol: 'http',
+            host: 'examdao.com',
+            protocol: 'https',
             port: 5175,
         },
     },
@@ -18,9 +18,10 @@ export default defineConfig({
         laravel({
             input: [
                 // Dashboard pages
-                'resources/css/dashboard.css',
+                'resources/css/app.css',
                 'resources/js/dashboard.js',
             ],
+            buildDirectory: 'build/dashboard',
             refresh: true,
         }),
         vue(),

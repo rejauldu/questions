@@ -4,12 +4,12 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     server: {
-        host: 'ict',
+        host: 'examdao.com',
         port: 5174,
         cors: true,
         hmr: {
-            host: 'ict',
-            protocol: 'http',
+            host: 'examdao.com',
+            protocol: 'https',
             port: 5174,
         },
     },
@@ -18,11 +18,13 @@ export default defineConfig({
         laravel({
             input: [
                 // Chatbot + Auth pages
-                'resources/css/chatbot.css',
+                'resources/css/app.css',
                 'resources/js/chatbot.js',
             ],
+            buildDirectory: 'build/chatbot',
             refresh: true,
         }),
         vue(),
+        
     ],
 });

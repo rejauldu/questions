@@ -25,7 +25,7 @@ class QuestionController extends Controller
         $q = trim($request->input('q'));
         $perPage = 10;
 
-        $query = \App\Models\Post::query()->with(['institution', 'subject'])
+        $query = Post::query()->with(['institution', 'subject'])
                 ->join('institutions', 'institutions.id', '=', 'posts.institution_id')
                 ->join('subjects', 'subjects.id', '=', 'posts.subject_id');
 
@@ -132,26 +132,36 @@ class QuestionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $data = $request->except(['_token', '_method']);
         
         if ($request->hasFile('url')) {
             $file = $request->file('url');
-            $path = $file->store('questions', 'public'); // store in storage/app/public/questions
-            
-            $fullPath = storage_path('app/public/' . $path);
+    
+            // Define target folder inside public_html/images/questions
+            $targetFolder = public_html_path('images/questions');
+    
+            // Generate a unique filename
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+    
+            // Move uploaded file to public_html/images/questions
+            $file->move($targetFolder, $filename);
+    
+            $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $filename;
+    
+            // Convert to WebP
             $converter = new Image2WebpService();
-            $webpPath = $converter->convert($fullPath, 800, 80);
-
-            // Convert the WebP full path back to a relative path for public access
-            $relativePath = str_replace(storage_path('app/public') . '/', '', $webpPath);
-
+            $webpPath = $converter->convert($fullPath, 800, 50);
+    
+            // Save relative path for DB (relative to public_html)
+            $relativePath = str_replace(public_html_path(), '', $webpPath);
+            $relativePath = ltrim($relativePath, '/'); // remove leading slash if any
+    
             $data['url'] = $relativePath; // store relative path in DB
         }
-
+    
         $post = Post::create($data);
-
+    
         return redirect()->route('questions.show', $post->id)
                         ->with('success', 'Question created successfully.');
     }

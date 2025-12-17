@@ -4,12 +4,12 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     server: {
-        host: 'ict',
+        host: 'examdao.com',
         port: 5173,
         cors: true,
         hmr: {
-            host: 'ict',
-            protocol: 'http',
+            host: 'examdao.com',
+            protocol: 'https',
             port: 5173,
         },
     },
@@ -21,6 +21,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
             ],
+            buildDirectory: 'build/front',
             refresh: true,
         }),
         vue(),

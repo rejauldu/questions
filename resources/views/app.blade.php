@@ -8,7 +8,7 @@
     
     <!-- Scripts -->
     @routes
-    @vite(['resources/css/dashboard.css', 'resources/js/dashboard.js'])
+    @vite(['resources/css/app.css', 'resources/js/dashboard.js'], 'build/dashboard')
     @inertiaHead
 </head>
 <body>

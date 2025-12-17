@@ -105,12 +105,17 @@
             </li>
             {{-- Added Dashboard link to mobile menu --}}
             @auth
-            <li>
-                <a href="{{ url('/dashboard') }}"
-                    class="block p-3 rounded-lg {{ request()->routeIs('dashboard') ? 'bg-indigo-900 text-yellow-400 font-bold' : 'text-white hover:bg-indigo-900' }}">
-                    Dashboard
-                </a>
-            </li>
+                @if(auth()->user()->role === 'admin')
+                    <li>
+                        <a href="{{ url('/dashboard') }}"
+                        class="{{ request()->routeIs('dashboard')
+                                ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1'
+                                : 'text-white hover:text-yellow-300' }}
+                        transition duration-200 ease-in-out">
+                            Dashboard
+                        </a>
+                    </li>
+                @endif
             @endauth
 
             {{-- Mobile Registration/Logout Logic --}}
