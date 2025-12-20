@@ -30,7 +30,7 @@
                         1. Introduction
                     </h2>
                     <p>
-                        Welcome to <span class="font-bold">ExamDao</span>, operated by [Your Company Name, if applicable]. We respect your privacy and are committed to protecting your personal data. This policy will inform you as to how we look after your personal data when you visit our website (regardless of where you visit it from) and tell you about your privacy rights and how the law protects you.
+                        Welcome to <span class="font-bold">ExamDao</span>. We respect your privacy and are committed to protecting your personal data. This policy will inform you as to how we look after your personal data when you visit our website (regardless of where you visit it from) and tell you about your privacy rights and how the law protects you.
                     </p>
                     <p class="mt-4">
                         By using the ExamDao website and services (including our Question Bank and Chatbot), you consent to the data practices described in this policy.

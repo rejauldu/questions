@@ -17,7 +17,7 @@ class Image2WebpController
      * @param int $q        Quality 0-100
      * @return string       Path to the new WebP file (relative to storage)
      */
-    public function convertToWebp(string $path, int $targetWidth = 800, int $q = 80): string
+    public function convertToWebp(string $path, int $targetWidth = 800, int $q = 50): string
     {
         if (!File::exists($path)) {
             throw new \Exception("File does not exist: {$path}");
@@ -48,6 +48,7 @@ class Image2WebpController
 
         // Save as WebP
         $newFileName = $this->generateWebpName($path);
+        dd($newFileName);
         imagewebp($newImage, $newFileName, $q);
 
         imagedestroy($newImage);

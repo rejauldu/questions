@@ -3,21 +3,11 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Exception;
 
 class Image2WebpService
 {
-    /**
-     * Convert uploaded image to WebP with standard width.
-     *
-     * @param string $path Full path to uploaded file
-     * @param int $targetWidth Desired width (default 800px)
-     * @param int $quality WebP quality 0-100 (default 80)
-     * @return string Relative path to the new WebP file
-     * @throws Exception
-     */
-    public function convert(string $path, int $targetWidth = 800, int $quality = 80): string
+    public function convert(string $path, int $targetWidth = 0, int $quality = 80): string
     {
         if (!File::exists($path)) {
             throw new Exception("File does not exist: {$path}");
@@ -32,43 +22,39 @@ class Image2WebpService
         [$width, $height] = getimagesize($path);
         $oldImage = $creator($path);
 
-        // Calculate height to maintain aspect ratio
-        $ratio = $width / $height;
-        $w = $targetWidth;
-        $h = intval($targetWidth / $ratio);
+        // --- LOGIC CHANGE START ---
+        // If targetWidth is 0, use original dimensions
+        if ($targetWidth <= 0) {
+            $w = $width;
+            $h = $height;
+        } else {
+            // Calculate height to maintain aspect ratio
+            $ratio = $width / $height;
+            $w = $targetWidth;
+            $h = intval($targetWidth / $ratio);
+        }
+        // --- LOGIC CHANGE END ---
 
-        // Create new true color image
         $newImage = imagecreatetruecolor($w, $h);
 
-        // Fill with white for transparency
-        $white = imagecolorallocate($newImage, 255, 255, 255);
-        imagefill($newImage, 0, 0, $white);
+        // Handle transparency for PNG/WebP
+        imagealphablending($newImage, false);
+        imagesavealpha($newImage, true);
+        $transparent = imagecolorallocatealpha($newImage, 255, 255, 255, 127);
+        imagefilledrectangle($newImage, 0, 0, $w, $h, $transparent);
 
-        // Resample old image into new one
         imagecopyresampled($newImage, $oldImage, 0, 0, 0, 0, $w, $h, $width, $height);
 
-        // Generate unique WebP file name
         $newFile = $this->generateWebpName($path);
-
-        // Save WebP
         imagewebp($newImage, $newFile, $quality);
 
-        // Free memory
         imagedestroy($newImage);
         imagedestroy($oldImage);
 
-        // Delete original if not WebP
-        if ($creator !== 'imagecreatefromwebp') {
-            File::delete($path);
-        }
-
-        // Return relative path (suitable for DB storage)
-        return str_replace(public_path('storage') . '/', '', $newFile);
+        // IMPORTANT: Return absolute path so your Controller rename/exists logic works
+        return $newFile;
     }
 
-    /**
-     * Get the appropriate PHP image creation function for a file.
-     */
     private function imageType(string $path)
     {
         $mime = mime_content_type($path);
@@ -81,14 +67,20 @@ class Image2WebpService
         };
     }
 
-    /**
-     * Generate a unique WebP file name in the same directory.
-     */
     private function generateWebpName(string $path): string
     {
         $info = pathinfo($path);
-        $dir = $info['dirname'];
-        $name = $info['filename'] . '-' . Str::random(6) . '.webp';
-        return $dir . '/' . $name;
+        $dir  = $info['dirname'];
+        $base = $info['filename'];
+        
+        $filename = $base . '.webp';
+        $fullPath = $dir . '/' . $filename;
+    
+        if (File::exists($fullPath)) {
+            $filename = $base . '-' . time() . '.webp';
+            $fullPath = $dir . '/' . $filename;
+        }
+    
+        return $fullPath;
     }
 }

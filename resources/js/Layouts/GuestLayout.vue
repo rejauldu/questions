@@ -9,9 +9,9 @@ import { Link } from '@inertiajs/vue3'
     >
         <!-- Logo (UNCHANGED) -->
         <div class="mb-6">
-            <Link href="/">
+            <a href="/">
                 <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
+            </a>
         </div>
 
         <!-- Card -->

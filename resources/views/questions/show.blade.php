@@ -21,8 +21,8 @@
     }
 
     // Board
-    if (!empty($post->board)) {
-        $seoParts[] = $post->board;
+    if (!empty($post->board->name)) {
+        $seoParts[] = $post->board->name;
     }
 
     // Year
@@ -66,6 +66,7 @@
                 {{-- Copy Question Button --}}
                 @php
                     $full_copy_data = strip_tags($post->article) . "\n\n";
+                    // Only append options to copy data if they are text-based (no image)
                     if (!$post->url) {
                         $full_copy_data .= "ক) " . strip_tags($post->a) . "\n" 
                                          . "খ) " . strip_tags($post->b) . "\n" 
@@ -84,13 +85,15 @@
                 {!! $post->article !!}
             </div>
 
-            {{-- Image Display --}}
+            {{-- Image Display (Full Width) --}}
             @if ($post->url)
-                <div class="mb-4 p-3 bg-white rounded-lg border border-secondary-200 flex justify-center">
+                <div class="mb-4 bg-white rounded-lg border border-secondary-200 overflow-hidden w-full">
                     <img src="{{ asset($post->url) }}" 
                          alt="Question Diagram/Image" 
-                         class="max-w-full h-auto object-contain rounded-lg max-h-[300px] w-auto" />
+                         class="w-full h-auto block" />
                 </div>
+            @else
+                {{-- Only show text options if there is no image --}}
                 <div class="space-y-2 text-secondary-700 text-sm">
                     <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
                         <span class="font-bold text-primary-500 min-w-4 inline-block mr-1">ক)</span> {!! $post->a !!}

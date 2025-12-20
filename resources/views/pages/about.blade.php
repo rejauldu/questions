@@ -62,7 +62,7 @@
                             The Individual Behind ExamDao
                         </h2>
                         <p class="mt-4">
-                            Unlike large corporations, ExamDao is a project born out of personal frustration with the lack of organized, free educational tools available to students in Bangladesh. I started this site [mention year/context] as a solo developer with the goal of creating the exact resource I wish I had while preparing for my own [mention SSC, HSC, or admission test].
+                            I started this site in 2025 as a solo developer with the goal of creating the exact resource I wish I had while preparing for my own job preparation, where I realized that access to high-quality question banks shouldn't be a luxury for the few, but a right for every job seeker.
                         </p>
                         <p class="mt-3">
                             Every line of code, every question verified, and every feature of the Chatbot is personally overseen. This is a labor of love, maintained through a commitment to quality and supported entirely by <b>Google Ads</b> to ensure it remains a free resource for everyone.

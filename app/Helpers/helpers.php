@@ -74,8 +74,8 @@ if (!function_exists('question_meta_text')) {
         }
 
         // Board
-        if (!empty($post->board)) {
-            $parts[] = $post->board;
+        if (!empty($post->board->name)) {
+            $parts[] = $post->board->name . " Board";
         }
 
         // Year
@@ -84,6 +84,46 @@ if (!function_exists('question_meta_text')) {
         }
 
         return implode(' - ', $parts);
+    }
+}
+if (!function_exists('question_image_basename')) {
+    /**
+     * Generate base filename (WITHOUT ID)
+     */
+    function question_image_basename(array $data): string
+    {
+        $parts = [];
+
+        if (!empty($data['institution_id'])) {
+            $institution = \App\Models\Institution::find($data['institution_id']);
+            if ($institution?->name) {
+                $parts[] = explode('/', $institution->name)[0];
+            }
+        }
+
+        if (!empty($data['subject_id'])) {
+            $subject = \App\Models\Subject::find($data['subject_id']);
+            if ($subject?->name) {
+                $parts[] = $subject->name;
+            }
+        }
+        
+        if (!empty($data['board_id'])) {
+            $board = \App\Models\Board::find($data['board_id']);
+            if ($board?->name) {
+                $parts[] = $board->name . " Board";
+            }
+        }
+
+        if (!empty($data['class'])) {
+            $parts[] = ordinal_suffix($data['class']) . ' year';
+        }
+
+        if (!empty($data['year'])) {
+            $parts[] = $data['year'];
+        }
+
+        return \Illuminate\Support\Str::slug(implode(' ', $parts));
     }
 }
 

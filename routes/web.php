@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/chatbot/{id?}', [ChatbotController::class, 'chatbot'])->name('chatbot');
     Route::post('/chat/send', [ChatbotController::class, 'sendMessage'])->name('api.chat.send');
     Route::post('/questions/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::post('/image-upload', [QuestionController::class, 'upload'])->name('api.image.upload');
 });
 
 Route::middleware('auth')->group(function () {

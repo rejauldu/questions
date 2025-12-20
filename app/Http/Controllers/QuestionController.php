@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Board;
 use App\Models\Post;
 use App\Models\Institution;
 use App\Models\Subject;
@@ -23,56 +24,69 @@ class QuestionController extends Controller
     public function index(Request $request)
     {
         $q = trim($request->input('q'));
+
+        // Only redirect if query string 'q' exists but is empty
+        if ($request->has('q') && $q === '') {
+            return redirect()->route('questions.index');
+        }
         $perPage = 10;
-
-        $query = Post::query()->with(['institution', 'subject'])
-                ->join('institutions', 'institutions.id', '=', 'posts.institution_id')
-                ->join('subjects', 'subjects.id', '=', 'posts.subject_id');
-
+    
+        $query = Post::query()
+            ->with(['institution', 'subject', 'board'])
+            ->join('institutions', 'institutions.id', '=', 'posts.institution_id')
+            ->join('subjects', 'subjects.id', '=', 'posts.subject_id')
+            ->join('boards', 'boards.id', '=', 'posts.board_id');
+    
         if ($q) {
-            $words = preg_split('/\s+/', $q); // split by spaces
+            $words = preg_split('/\s+/', $q);
             $bindings = [];
-
-            // Direct full query match score
+    
+            // Full query match score
             $scoreSql = "(CASE 
                 WHEN posts.article LIKE ? THEN 70
                 WHEN institutions.name LIKE ? THEN 90
                 WHEN subjects.name LIKE ? THEN 80
+                WHEN boards.name LIKE ? THEN 85
                 ELSE 0
             END)";
-
+    
             $bindings[] = "%{$q}%";
             $bindings[] = "%{$q}%";
             $bindings[] = "%{$q}%";
-
-            // Add word match score dynamically
+            $bindings[] = "%{$q}%";
+    
+            // Word-level scoring
             foreach ($words as $word) {
                 $word = trim($word);
                 if ($word) {
                     $scoreSql .= " + (CASE WHEN posts.article LIKE ? THEN 10 ELSE 0 END)";
                     $bindings[] = "%{$word}%";
-
+    
                     $scoreSql .= " + (CASE WHEN institutions.name LIKE ? THEN 15 ELSE 0 END)";
                     $bindings[] = "%{$word}%";
-
+    
                     $scoreSql .= " + (CASE WHEN subjects.name LIKE ? THEN 15 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
+    
+                    $scoreSql .= " + (CASE WHEN boards.name LIKE ? THEN 15 ELSE 0 END)";
                     $bindings[] = "%{$word}%";
                 }
             }
-
+    
             $query->selectRaw("posts.*, {$scoreSql} as match_score", $bindings)
                 ->where(function ($subQuery) use ($q, $words) {
                     $subQuery->where('posts.article', 'LIKE', "%{$q}%")
-                            ->orWhere('institutions.name', 'LIKE', "%{$q}%")
-                            ->orWhere('subjects.name', 'LIKE', "%{$q}%");
-
-                    // Add word-level matching
+                        ->orWhere('institutions.name', 'LIKE', "%{$q}%")
+                        ->orWhere('subjects.name', 'LIKE', "%{$q}%")
+                        ->orWhere('boards.name', 'LIKE', "%{$q}%");
+    
                     foreach ($words as $word) {
                         $word = trim($word);
                         if ($word) {
                             $subQuery->orWhere('posts.article', 'LIKE', "%{$word}%")
-                                    ->orWhere('institutions.name', 'LIKE', "%{$word}%")
-                                    ->orWhere('subjects.name', 'LIKE', "%{$word}%");
+                                ->orWhere('institutions.name', 'LIKE', "%{$word}%")
+                                ->orWhere('subjects.name', 'LIKE', "%{$word}%")
+                                ->orWhere('boards.name', 'LIKE', "%{$word}%");
                         }
                     }
                 })
@@ -84,9 +98,9 @@ class QuestionController extends Controller
                 ->orderByDesc('posts.year')
                 ->orderByDesc('posts.created_at');
         }
-
+    
         $posts = $query->paginate($perPage)->withQueryString();
-
+    
         return view('questions.index', compact('posts', 'q'));
     }
 
@@ -104,8 +118,11 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        // Get institutions
-        $institutions = Institution::select('id','name')->get();
+        // Institutions
+        $institutions = Institution::orderBy('name')->get(['id', 'name']);
+
+        // Boards
+        $boards = Board::orderBy('name')->get(['id', 'name']);
 
         // Years: last 6 years including current
         $currentYear = date('Y');
@@ -124,6 +141,7 @@ class QuestionController extends Controller
 
         return Inertia::render('Questions/Create', [
             'institutions' => $institutions,
+            'boards' => $boards,   // ✅ added
             'years' => $years,
             'classes' => $classes,
         ]);
@@ -134,36 +152,107 @@ class QuestionController extends Controller
      */
     public function store(Request $request) {
         $data = $request->except(['_token', '_method']);
-        
+        // $data["subject_id"] = 50;
+        // $data["board_id"] = 6;
+        $tempWebpPath = null;
+    
         if ($request->hasFile('url')) {
             $file = $request->file('url');
     
-            // Define target folder inside public_html/images/questions
             $targetFolder = public_html_path('images/questions');
     
-            // Generate a unique filename
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            // 1. Base filename (NO ID yet)
+            $baseName = question_image_basename($data);
     
-            // Move uploaded file to public_html/images/questions
-            $file->move($targetFolder, $filename);
+            $extension = $file->getClientOriginalExtension();
+            $tempFilename = $baseName . '.' . $extension;
     
-            $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $filename;
+            // 2. Move original
+            $file->move($targetFolder, $tempFilename);
     
-            // Convert to WebP
+            $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $tempFilename;
+    
+            // 3. Convert to WebP
             $converter = new Image2WebpService();
-            $webpPath = $converter->convert($fullPath, 800, 50);
-    
-            // Save relative path for DB (relative to public_html)
-            $relativePath = str_replace(public_html_path(), '', $webpPath);
-            $relativePath = ltrim($relativePath, '/'); // remove leading slash if any
-    
-            $data['url'] = $relativePath; // store relative path in DB
+            $tempWebpPath = $converter->convert($fullPath, 800, 50);
+            
+            // Temporarily store URL (will update after ID exists)
+            $data['url'] = ltrim(
+                str_replace(public_html_path(), '', $tempWebpPath),
+                '/'
+            );
         }
     
-        $post = Post::create($data);
+        // 4. Create question row
+        $question = Post::create($data);
     
-        return redirect()->route('questions.show', $post->id)
-                        ->with('success', 'Question created successfully.');
+        // 5. Rename image AFTER we have ID
+        if ($tempWebpPath && file_exists($tempWebpPath)) {
+    
+            $pathInfo = pathinfo($tempWebpPath);
+    
+            $newFilename = $pathInfo['filename']
+                . '-' . $question->id
+                . '.webp';
+    
+            $newFullPath = $pathInfo['dirname']
+                . DIRECTORY_SEPARATOR
+                . $newFilename;
+    
+            rename($tempWebpPath, $newFullPath);
+    
+            // 6. Update DB with final filename
+            $question->update([
+                'url' => ltrim(
+                    str_replace(public_html_path(), '', $newFullPath),
+                    '/'
+                )
+            ]);
+        }
+    
+        return redirect()
+            ->route('questions.show', $question->id)
+            ->with('success', 'Question created successfully.');
+    }
+
+    public function upload(Request $request) 
+    {
+        $request->validate(['image' => 'required|image|max:2048']);
+        
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            
+            // Use your custom public_html path
+            $targetFolder = public_html_path('images/articles');
+            
+            if (!file_exists($targetFolder)) {
+                mkdir($targetFolder, 0755, true);
+            }
+
+            $baseName = 'article_' . time() . '_' . uniqid();
+            $extension = $file->getClientOriginalExtension();
+            $tempFilename = $baseName . '.' . $extension;
+
+            $file->move($targetFolder, $tempFilename);
+            $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $tempFilename;
+
+            $converter = new Image2WebpService();
+            
+            // Pass 0 to keep original width, 80 for quality
+            $webpFullPath = $converter->convert($fullPath, 0, 80);
+
+            // Clean up original if it wasn't already webp
+            if (file_exists($fullPath) && $extension !== 'webp') {
+                unlink($fullPath);
+            }
+
+            // Generate the URL for the frontend
+            $relativeUrl = ltrim(str_replace(public_html_path(), '', $webpFullPath), '/');
+
+            return response()->json([
+                'url' => asset($relativeUrl)
+            ]);
+        }
     }
 
     /**
@@ -230,60 +319,70 @@ class QuestionController extends Controller
                          ->with('success', 'Question deleted successfully.');
     }
 
-    public function search(Request $request) {
+    public function search(Request $request)
+    {
+        // 0. Redirect to clean URL if needed
+        $cleanQuery = array_filter(
+            $request->query(),
+            fn ($value) => $value !== null && $value !== ''
+        );
+    
+        if ($cleanQuery !== $request->query()) {
+            return redirect()
+                ->route('search', $cleanQuery)
+                ->setStatusCode(301);
+        }
+    
         // 1. Fetch available filter options
         $filters = $this->getAvailableFilters();
-
-        // 2. Build the query based on request parameters
+    
+        // 2. Build the query
         $query = Post::query();
-
-        // Apply filters
+    
         if ($request->filled('institution_id')) {
             $query->where('institution_id', $request->institution_id);
         }
+    
         if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
-        if ($request->filled('topic')) {
-            $query->where('topic', $request->topic);
+    
+        if ($request->filled('board_id')) {
+            $query->where('board_id', $request->board_id);
         }
+    
         if ($request->filled('year')) {
             $query->where('year', $request->year);
         }
+    
         if ($request->filled('class')) {
             $query->where('class', $request->class);
         }
-        if ($request->filled('board')) {
-            $query->where('board', $request->board);
-        }
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
-        }
-
-        // Pagination limit
-        $perPage = 10;
-
-        // Fetch results with pagination
-        $posts = $query->with(['institution', 'subject'])
+    
+        $posts = $query->with(['institution', 'subject', 'board'])
             ->orderBy('year', 'desc')
             ->orderBy(
-                Subject::select('name')->whereColumn('subjects.id', 'posts.subject_id')
+                Subject::select('name')
+                    ->whereColumn('subjects.id', 'posts.subject_id')
             )
             ->orderBy('created_at', 'desc')
-            ->paginate($perPage)
+            ->paginate(10)
             ->withQueryString();
-
-        // 3. Prepare currentParams with readable names
+    
         $currentParams = array_merge($request->all(), [
-            'institution_name' => $request->filled('institution_id') 
-                ? Institution::find($request->institution_id)?->name 
+            'institution_name' => $request->filled('institution_id')
+                ? Institution::find($request->institution_id)?->name
                 : null,
-            'subject_name' => $request->filled('subject_id') 
-                ? Subject::find($request->subject_id)?->name 
+    
+            'subject_name' => $request->filled('subject_id')
+                ? Subject::find($request->subject_id)?->name
+                : null,
+    
+            'board_name' => $request->filled('board_id')
+                ? Board::find($request->board_id)?->name
                 : null,
         ]);
-
-        // 4. Return the Blade view with data
+    
         return view('pages.search', [
             'initialFilters' => $filters,
             'posts' => $posts,
@@ -296,23 +395,15 @@ class QuestionController extends Controller
      * Internal helper to fetch all available filter options from the Post model.
      */
     protected function getAvailableFilters()
-    {
-        // Fetch all institutions for autocomplete list
-        $institutions = Institution::all(['id', 'name']);
+{
+    return [
+        'institutions' => Institution::orderBy('name')->get(['id', 'name']),
+        'boards'       => Board::orderBy('name')->get(),
+        'years'        => Post::distinct()->pluck('year')->filter()->sortDesc()->values()->toArray(),
+        'classes'      => Post::distinct()->pluck('class')->filter()->sort()->values()->toArray(),
+    ];
+}
 
-        // Fetch distinct values for key filter fields (excluding Subject)
-        $topics = Post::distinct()->pluck('topic')->filter()->sort()->values()->toArray();
-        $years = Post::distinct()->pluck('year')->filter()->sort()->values()->toArray();
-        rsort($years);
-
-        return [
-            'institutions' => $institutions,
-            'topics' => $topics,
-            'years' => $years,
-            'classes' => Post::distinct()->pluck('class')->filter()->sort()->values()->toArray(),
-            'categories' => Post::distinct()->pluck('category')->filter()->sort()->values()->toArray(),
-        ];
-    }
 
     /**
      * API endpoint to fetch distinct subjects based on a selected Institution ID.

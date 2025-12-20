@@ -121,9 +121,9 @@
             {{-- Mobile Registration/Logout Logic --}}
             @guest
             <li>
-                <a href="{{ url('/register') }}"
+                <a href="{{ url('/login') }}"
                     class="block text-center mt-4 bg-yellow-400 text-indigo-800 px-4 py-3 rounded-full text-sm font-bold hover:bg-yellow-500 transition duration-150 shadow-lg">
-                    Registration
+                    Login
                 </a>
             </li>
             @endguest

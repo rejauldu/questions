@@ -13,7 +13,7 @@
         </h1>
 
         {{-- Sub-heading (MOBILE: order-4 | DESKTOP: order-3) --}}
-        <h2 class="text-lg sm:text-2xl font-semibold text-primary-200 order-4 md:order-3 pt-2 sm:pt-0">
+        <h2 class="text-lg sm:text-2xl font-semibold text-primary-200 order-4 md:order-3 pt-2 sm:pt-0 hidden md:block">
             Use the box below to quickly **search by Keyword** or explore all your options below.
         </h2>
         
