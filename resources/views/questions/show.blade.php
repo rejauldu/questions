@@ -59,7 +59,7 @@
                 {{-- Meta Data using helper --}}
                 <h1 class="text-sm font-bold text-secondary-900 leading-tight pr-4">
                     <span class="text-warning-700 p-1 px-2 rounded-md">
-                        {{ question_meta_text($post) }}
+                        {{ $meta = question_meta_text($post) }}
                     </span>
                 </h1>
                 
@@ -82,15 +82,17 @@
             
             {{-- Question Content --}}
             <div class="text-base text-secondary-800 mb-4 leading-relaxed">
-                {!! $post->article !!}
+                {!! $post->article ?? $meta !!}
             </div>
 
             {{-- Image Display (Full Width) --}}
             @if ($post->url)
                 <div class="mb-4 bg-white rounded-lg border border-secondary-200 overflow-hidden w-full">
-                    <img src="{{ asset($post->url) }}" 
-                         alt="Question Diagram/Image" 
-                         class="w-full h-auto block" />
+                    <a href="{{ asset($post->url) }}">
+                        <img src="{{ asset($post->url) }}" 
+                            alt="{{ $meta ?? ''}}"
+                            class="w-full h-auto block" />
+                    </a>
                 </div>
             @else
                 {{-- Only show text options if there is no image --}}
@@ -121,14 +123,26 @@
                     
                     <div class="p-4 bg-warning-100 text-warning-800 rounded-lg border border-warning-400 font-semibold flex items-center shadow-sm mb-4 relative">
                         <x-icons.tick-round class="w-6 h-6 text-warning-600 flex-shrink-0" />
+                        
                         <div class="flex items-baseline w-full justify-between">
                             <div class="flex items-center text-sm">
                                 <span class="uppercase tracking-wider mr-2">Correct Answer:</span> 
-                                <span class="text-xl font-extrabold text-primary-700">{{ $post->answer }}</span>
+                                <span class="text-xl font-extrabold text-primary-700">
+                                    @if(strtoupper($post->category) === 'MCQ')
+                                        {{ $post->ans }}
+                                    @elseif(strtoupper($post->category) === 'CQ')
+                                        {{ $post->answer }}
+                                    @else
+                                        {{-- Optional fallback --}}
+                                        N/A
+                                    @endif
+                                </span>
                             </div>
                         </div>
                         
-                        <button class="copy-btn copy-answer-btn absolute top-2 right-2 flex items-center gap-1 text-warning-700 hover:text-primary-700 text-xs font-medium transition duration-150 flex-shrink-0" data-copy="{{ $post->answer }}">
+                        {{-- Update the data-copy attribute to match the displayed logic --}}
+                        <button class="copy-btn copy-answer-btn absolute top-2 right-2 flex items-center gap-1 text-warning-700 hover:text-primary-700 text-xs font-medium transition duration-150 flex-shrink-0" 
+                            data-copy="{{ strtoupper($post->category) === 'MCQ' ? $post->ans : $post->answer }}">
                             <x-icons.copy />
                             Copy Answer
                         </button>

@@ -1,7 +1,6 @@
 import defaultTheme from 'tailwindcss/defaultTheme'
 import forms from '@tailwindcss/forms'
 import typography from '@tailwindcss/typography'
-import lineClamp from '@tailwindcss/line-clamp'
 import colors from 'tailwindcss/colors'
 
 export default {
@@ -35,12 +34,6 @@ export default {
                 '96': '24rem',
             },
 
-            // --- Custom Shadows ---
-            boxShadow: {
-                '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
-                'inner-sm': 'inset 0 1px 3px 0 rgba(0, 0, 0, 0.06)',
-            },
-
             // --- Font Family ---
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
@@ -50,7 +43,6 @@ export default {
 
     plugins: [
         forms,
-        typography, 
-        lineClamp, // Added to ensure line-clamp-4 works perfectly
+        typography,
     ],
 }

@@ -7,6 +7,7 @@ use App\Models\Institution;
 use App\Models\Subject;
 use App\Models\Answer;
 use App\Models\Board;
+use App\Models\Comment;
 
 
 class Post extends Model
@@ -18,13 +19,10 @@ class Post extends Model
         'b',
         'c',
         'd',
-        'answer',
+        'ans',
         'answer_id',
         'subject_id',
-        'topic',
-        'sub_topic',
-        'section',
-        'sub_section',
+        'chapter',
         'category',
         'board_id',
         'year',
@@ -62,5 +60,9 @@ class Post extends Model
     public function board()
     {
         return $this->belongsTo(Board::class);
+    }
+    public function comments()
+    {
+        return $this->hasMany(Comment::class)->latest();
     }
 }

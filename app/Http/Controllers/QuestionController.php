@@ -260,22 +260,23 @@ class QuestionController extends Controller
      */
     public function show($questionId, $slug = null)
     {
-        $post = Post::findOrFail($questionId);
+        // Eager load relationships + nested comment authors
+        $post = Post::with([
+            'institution', 
+            'subject', 
+            'board', 
+            'comments.user' // Eager load comments AND the user who wrote them
+        ])->findOrFail($questionId);
 
         $q_meta = question_meta_text($post);
-
-        // Optionally, generate the slug
         $realSlug = url_slug($post->article, $q_meta);
 
-        // Redirect if slug is missing or incorrect
         if (!$slug || $slug !== $realSlug) {
             return redirect()->route('questions.show', [
                 'question' => $post->id,
                 'slug' => $realSlug
             ]);
         }
-        
-
         return view('questions.show', compact('post'));
     }
 

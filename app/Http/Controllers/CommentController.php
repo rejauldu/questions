@@ -26,6 +26,6 @@ class CommentController extends Controller
 
         Comment::create($commentData);
 
-        return back()->with('success', 'Your comment has been submitted for review.');
+        return back()->with('success', 'Comment added successfully!');
     }
 }

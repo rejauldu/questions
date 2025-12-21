@@ -99,7 +99,7 @@
             </li>
             <li>
                 <a href="{{ url('/contact') }}"
-                    class="block p-3 rounded-lg {{ request()->routeIs('contact') ? 'bg-indigo-900 text-yellow-400 font-bold' : 'text-white hover:bg-indigo-900' }}">
+                    class="block p-3 rounded-lg {{ request()->routeIs('contact') ? 'bg-indigo-900 text-yellow-400 font-bold' : 'text-white hover:bg-indigo-900' }} transition duration-150">
                     Contact
                 </a>
             </li>
@@ -108,10 +108,10 @@
                 @if(auth()->user()->role === 'admin')
                     <li>
                         <a href="{{ url('/dashboard') }}"
-                        class="{{ request()->routeIs('dashboard')
-                                ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1'
-                                : 'text-white hover:text-yellow-300' }}
-                        transition duration-200 ease-in-out">
+                        class="block p-3 rounded-lg {{ request()->routeIs('dashboard')
+                                ? 'bg-indigo-900 text-yellow-400 font-bold'
+                                : 'text-white hover:bg-indigo-900' }}
+                        transition duration-150">
                             Dashboard
                         </a>
                     </li>
