@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Models\Institution;
 use App\Models\Subject;
 use App\Services\Image2WebpService;
+use Illuminate\Support\Facades\Validator;
 
 class QuestionController extends Controller
 {
@@ -21,35 +22,37 @@ class QuestionController extends Controller
      * Display a listing of the resource.
      */
 
-    public function index(Request $request)
-    {
+    public function index(Request $request) {
         $q = trim($request->input('q'));
-
+    
         // Only redirect if query string 'q' exists but is empty
         if ($request->has('q') && $q === '') {
             return redirect()->route('questions.index');
         }
+    
         $perPage = 10;
     
         $query = Post::query()
             ->with(['institution', 'subject', 'board'])
-            ->join('institutions', 'institutions.id', '=', 'posts.institution_id')
-            ->join('subjects', 'subjects.id', '=', 'posts.subject_id')
-            ->join('boards', 'boards.id', '=', 'posts.board_id');
+            ->leftJoin('institutions', 'institutions.id', '=', 'posts.institution_id')
+            ->leftJoin('subjects', 'subjects.id', '=', 'posts.subject_id')
+            ->leftJoin('boards', 'boards.id', '=', 'posts.board_id');
     
         if ($q) {
             $words = preg_split('/\s+/', $q);
             $bindings = [];
     
-            // Full query match score
-            $scoreSql = "(CASE 
+            // Base relevance scoring
+            $scoreSql = "(CASE
                 WHEN posts.article LIKE ? THEN 70
                 WHEN institutions.name LIKE ? THEN 90
                 WHEN subjects.name LIKE ? THEN 80
                 WHEN boards.name LIKE ? THEN 85
+                WHEN posts.chapter LIKE ? THEN 75
                 ELSE 0
             END)";
     
+            $bindings[] = "%{$q}%";
             $bindings[] = "%{$q}%";
             $bindings[] = "%{$q}%";
             $bindings[] = "%{$q}%";
@@ -70,15 +73,20 @@ class QuestionController extends Controller
     
                     $scoreSql .= " + (CASE WHEN boards.name LIKE ? THEN 15 ELSE 0 END)";
                     $bindings[] = "%{$word}%";
+    
+                    $scoreSql .= " + (CASE WHEN posts.chapter LIKE ? THEN 15 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
                 }
             }
     
             $query->selectRaw("posts.*, {$scoreSql} as match_score", $bindings)
                 ->where(function ($subQuery) use ($q, $words) {
+    
                     $subQuery->where('posts.article', 'LIKE', "%{$q}%")
                         ->orWhere('institutions.name', 'LIKE', "%{$q}%")
                         ->orWhere('subjects.name', 'LIKE', "%{$q}%")
-                        ->orWhere('boards.name', 'LIKE', "%{$q}%");
+                        ->orWhere('boards.name', 'LIKE', "%{$q}%")
+                        ->orWhere('posts.chapter', 'LIKE', "%{$q}%");
     
                     foreach ($words as $word) {
                         $word = trim($word);
@@ -86,13 +94,15 @@ class QuestionController extends Controller
                             $subQuery->orWhere('posts.article', 'LIKE', "%{$word}%")
                                 ->orWhere('institutions.name', 'LIKE', "%{$word}%")
                                 ->orWhere('subjects.name', 'LIKE', "%{$word}%")
-                                ->orWhere('boards.name', 'LIKE', "%{$word}%");
+                                ->orWhere('boards.name', 'LIKE', "%{$word}%")
+                                ->orWhere('posts.chapter', 'LIKE', "%{$word}%");
                         }
                     }
                 })
                 ->orderByDesc('match_score')
                 ->orderByDesc('posts.year')
                 ->orderByDesc('posts.created_at');
+    
         } else {
             $query->select('posts.*')
                 ->orderByDesc('posts.year')
@@ -105,11 +115,114 @@ class QuestionController extends Controller
     }
 
 
+
     public function list()
     {
         $posts = Post::all(); // or Question::all();
         return Inertia::render('Questions/Index', [
             'posts' => $posts
+        ]);
+    }
+    
+    /**
+     * Display posts filtered by a specific subject (SEO Friendly).
+     */
+    public function subject($slug)
+    {
+        // 1. Convert slug 'higher-math' to 'Higher Math' or 'physics' to 'Physics'
+        $searchTerm = str_replace('-', ' ', $slug);
+    
+        // 2. Fetch all Subject IDs that match the search term (e.g., Physics-1, Physics-2)
+        $subjectIds = Subject::where('name', 'LIKE', '%' . $searchTerm . '%')
+            ->pluck('id');
+    
+        if ($subjectIds->isEmpty()) {
+            abort(404);
+        }
+    
+        // 3. Build the query for posts matching any of those subject IDs
+        $posts = Post::query()
+            ->whereIn('subject_id', $subjectIds)
+            ->with(['institution', 'board', 'subject'])
+            ->orderByDesc('year')
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+    
+        // 4. Set $q for the search box display
+        $q = ucwords($searchTerm);
+    
+        return view('questions.index', compact('posts', 'q'));
+    }
+    
+    /**
+     * Display posts filtered by a specific subject (SEO Friendly).
+     */
+    public function exam($institutionSlug = null, $subjectSlug = null, $year = null)
+    {
+        $query = Post::query()
+            ->with(['institution', 'subject', 'board'])
+            ->orderByDesc('year')
+            ->orderByDesc('created_at');
+    
+        // =====================
+        // 1. NO INSTITUTION
+        // =====================
+        if (!$institutionSlug) {
+            return view('questions.institution', [
+                'institutions' => Institution::select('id', 'name', 'slug')->get(),
+                'posts' => $query->paginate(10),
+            ]);
+        }
+    
+        // =====================
+        // 2. INSTITUTION
+        // =====================
+        $institution = Institution::where('slug', $institutionSlug)->firstOrFail();
+        $query->where('institution_id', $institution->id);
+    
+        if (!$subjectSlug) {
+            return view('questions.subject', [
+                'institution' => $institution,
+                'subjects' => Subject::where('institution_id', $institution->id)
+                    ->select('id', 'name', 'slug')
+                    ->get(),
+                'posts' => $query->paginate(10),
+            ]);
+        }
+    
+        // =====================
+        // 3. SUBJECT
+        // =====================
+        $subject = Subject::where('slug', $subjectSlug)
+            ->where('institution_id', $institution->id)
+            ->firstOrFail();
+    
+        $query->where('subject_id', $subject->id);
+    
+        if (!$year) {
+            return view('questions.year', [
+                'institution' => $institution,
+                'subject' => $subject,
+                'years' => Post::where('institution_id', $institution->id)
+                    ->where('subject_id', $subject->id)
+                    ->distinct()
+                    ->orderByDesc('year')
+                    ->pluck('year'),
+                'posts' => $query->paginate(10),
+            ]);
+        }
+    
+        // =====================
+        // 4. YEAR
+        // =====================
+        $query->where('year', $year);
+    
+        return view('questions.hierarchy', [
+            'institution' => $institution,
+            'subject' => $subject,
+            'year' => $year,
+            'posts' => $query->paginate(10),
         ]);
     }
 
@@ -126,10 +239,7 @@ class QuestionController extends Controller
 
         // Years: last 6 years including current
         $currentYear = date('Y');
-        $years = [];
-        for ($i = 0; $i < 6; $i++) {
-            $years[] = $currentYear - $i;
-        }
+        $years = range(date('Y'), date('Y')-5);
 
         // Classes dropdown
         $classes = [
@@ -150,69 +260,85 @@ class QuestionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {
-        $data = $request->except(['_token', '_method']);
-        // $data["subject_id"] = 50;
-        // $data["board_id"] = 6;
-        $tempWebpPath = null;
+    public function store(Request $request) 
+    {
+        // Extract data except the file input and tokens
+        $data = $request->except(['_token', '_method', 'images']);
+        $processedImages = []; // Array to track [ 'image1' => 'absolute/temp/path.webp' ]
     
-        if ($request->hasFile('url')) {
-            $file = $request->file('url');
-    
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
             $targetFolder = public_html_path('images/questions');
-    
-            // 1. Base filename (NO ID yet)
-            $baseName = question_image_basename($data);
-    
-            $extension = $file->getClientOriginalExtension();
-            $tempFilename = $baseName . '.' . $extension;
-    
-            // 2. Move original
-            $file->move($targetFolder, $tempFilename);
-    
-            $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $tempFilename;
-    
-            // 3. Convert to WebP
             $converter = new Image2WebpService();
-            $tempWebpPath = $converter->convert($fullPath, 800, 50);
-            
-            // Temporarily store URL (will update after ID exists)
-            $data['url'] = ltrim(
-                str_replace(public_html_path(), '', $tempWebpPath),
-                '/'
-            );
+    
+            // 1. Process only the first 4 images
+            foreach (array_slice($files, 0, 4) as $index => $file) {
+                $imageNumber = $index + 1; // Uniqueness suffix: 1, 2, 3, 4
+                $dbField = 'image' . $imageNumber;
+    
+                // Generate a temporary base name (without ID yet)
+                $baseName = question_image_basename($data);
+                $extension = $file->getClientOriginalExtension();
+                $tempFilename = $baseName . '.' . $extension;
+    
+                // 2. Move original file to target folder
+                $file->move($targetFolder, $tempFilename);
+                $fullPath = $targetFolder . DIRECTORY_SEPARATOR . $tempFilename;
+    
+                // 3. Convert to WebP using the 4th parameter ($imageNumber)
+                // This will return something like: .../images/questions/basename-1.webp
+                $tempWebpPath = $converter->convert($fullPath, 800, 80, $imageNumber);
+                
+                // Keep track of the temporary WebP path to rename it later with ID
+                $processedImages[$dbField] = $tempWebpPath;
+    
+                // Set temporary path in data array for initial creation
+                $data[$dbField] = ltrim(
+                    str_replace(public_html_path(), '', $tempWebpPath),
+                    '/'
+                );
+    
+                // Clean up the original moved file (non-webp) if you don't want to keep it
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
+            }
         }
     
-        // 4. Create question row
+        // 4. Create the question record in the Database
         $question = Post::create($data);
     
-        // 5. Rename image AFTER we have ID
-        if ($tempWebpPath && file_exists($tempWebpPath)) {
+        // 5. Rename images AFTER we have the Question ID for better SEO/Organization
+        $finalPaths = [];
+        foreach ($processedImages as $field => $oldWebpPath) {
+            if ($oldWebpPath && file_exists($oldWebpPath)) {
+                $pathInfo = pathinfo($oldWebpPath);
     
-            $pathInfo = pathinfo($tempWebpPath);
+                // Define final name: basename-number-id.webp
+                $finalFilename = $pathInfo['filename']
+                    . '-' . $question->id 
+                    . '.webp';
     
-            $newFilename = $pathInfo['filename']
-                . '-' . $question->id
-                . '.webp';
+                $finalFullPath = $pathInfo['dirname'] . DIRECTORY_SEPARATOR . $finalFilename;
     
-            $newFullPath = $pathInfo['dirname']
-                . DIRECTORY_SEPARATOR
-                . $newFilename;
+                // Perform the rename
+                rename($oldWebpPath, $finalFullPath);
     
-            rename($tempWebpPath, $newFullPath);
-    
-            // 6. Update DB with final filename
-            $question->update([
-                'url' => ltrim(
-                    str_replace(public_html_path(), '', $newFullPath),
+                // Prepare for batch update
+                $finalPaths[$field] = ltrim(
+                    str_replace(public_html_path(), '', $finalFullPath),
                     '/'
-                )
-            ]);
+                );
+            }
+        }
+        // 6. Final Update to DB with correct filenames containing the ID
+        if (!empty($finalPaths)) {
+            $question->update($finalPaths);
         }
     
         return redirect()
             ->route('questions.show', $question->id)
-            ->with('success', 'Question created successfully.');
+            ->with('success', 'Question created successfully with ' . count($processedImages) . ' images.');
     }
 
     public function upload(Request $request) 
@@ -362,10 +488,6 @@ class QuestionController extends Controller
     
         $posts = $query->with(['institution', 'subject', 'board'])
             ->orderBy('year', 'desc')
-            ->orderBy(
-                Subject::select('name')
-                    ->whereColumn('subjects.id', 'posts.subject_id')
-            )
             ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();
@@ -409,18 +531,30 @@ class QuestionController extends Controller
     /**
      * API endpoint to fetch distinct subjects based on a selected Institution ID.
      */
-    public function getSubjectsByInstitution(Request $request)
-    {
-        $request->validate([
-            'institution_id' => 'required|exists:institutions,id',
-        ]);
-
-        $subjects = Subject::whereHas('posts', function($q) use ($request) {
-                $q->where('institution_id', $request->institution_id);
-            })
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
+    public function getSubjectsByInstitution(Request $request) {
+        if(!$request->institution_id)
+            return response()->json([]);
+        
+        $subjects = Subject::where('institution_id', $request->institution_id)
+        ->where('status', 1)
+        ->orderBy('name')
+        ->get(['id', 'name']);
+        
         return response()->json($subjects);
+    }
+    
+    public function createBlade()
+    {
+        return view('questions.create-blade', [
+            'institutions' => Institution::orderBy('name')->get(['id', 'name']),
+            'boards' => Board::orderBy('name')->get(['id', 'name']),
+            'years' => range(date('Y'), date('Y')-5),
+            'classes' => [
+                ['value' => 1, 'text' => '1st Year'],
+                ['value' => 2, 'text' => '2nd Year'],
+                ['value' => 3, 'text' => '3rd Year'],
+                ['value' => 4, 'text' => '4th Year'],
+            ]
+        ]);
     }
 }

@@ -2,177 +2,254 @@
 
 @section('seo')
 @php
-    // Collect question meta parts in the same sequence as question_meta_text()
+    $institution = institution($post->institution->name);
+    $subject = subject($post->subject->name ?? null);
+    /* =====================================================
+     * 1. SEO META DATA
+     * ===================================================== */
     $seoParts = [];
 
-    // Institution (first part)
     if (!empty($post->institution->name)) {
-        $seoParts[] = explode('/', $post->institution->name)[0];
+        $seoParts[] = $institution;
     }
-
-    // Subject
     if (!empty($post->subject->name)) {
-        $seoParts[] = $post->subject->name;
+        $seoParts[] = $subject;
     }
-
-    // Class with ordinal
     if (!empty($post->class)) {
         $seoParts[] = ordinal_suffix($post->class) . ' year';
     }
-
-    // Board
     if (!empty($post->board->name)) {
-        $seoParts[] = $post->board->name;
+        $seoParts[] = $post->board->name . ' Board';
     }
-
-    // Year
     if (!empty($post->year)) {
         $seoParts[] = $post->year;
     }
 
-    // SEO Keyword/Title: combine all parts and append site branding
-    $title = implode(' - ', $seoParts) . ' - Questions & Solutions | ExamDao';
+    $h1 = implode(' ', $seoParts);
+    $title = Str::limit($h1, 36, '...') . ' Questions | ExamDao';
 
-    // SEO Description: include full question text + meta parts
-    $questionText = strip_tags($post->article);
-    $questionText = mb_strlen($questionText) > 150 ? mb_substr($questionText, 0, 147) . '...' : $questionText;
+    $questionText = trim(strip_tags($post->article));
+    $description = Str::limit(
+        $questionText . ' | ' . implode(', ', $seoParts),
+        155,
+        '...'
+    );
 
-    $description = "$questionText | " . implode(', ', $seoParts) . ". Access chapter-wise questions, past papers, model tests, and verified solutions for SSC, HSC, Admission, NU & BCS exams on ExamDao.";
-
-    // OG Image
-    $image = url('/images/og-home.webp');
-
-    // Canonical URL
     $canonical = url()->current();
+
+    /* =====================================================
+     * 2. QUESTION TEXT + OPTIONS
+     * ===================================================== */
+    $mainQuestionText = $questionText ?: "Question for {$h1}";
+
+    $optionText = '';
+    foreach (['a','b','c','d'] as $opt) {
+        if (!empty(trim(strip_tags($post->$opt ?? '')))) {
+            $optionText .= "\n" . strip_tags($post->$opt);
+        }
+    }
+
+    /* =====================================================
+     * 3. ANSWER + EXPLANATION
+     * ===================================================== */
+    $finalAnswer = '';
+
+    if (strtoupper($post->category) === 'MCQ') {
+        $finalAnswer = trim($post->ans);
+    } elseif ($post->answer && $post->answer->text) {
+        $finalAnswer = trim(strip_tags($post->answer->text));
+    }
+
+    if (!empty($post->explanation)) {
+        $finalAnswer .= "\n\nব্যাখ্যা: " . trim(strip_tags($post->explanation));
+    }
+
+    if (empty($finalAnswer)) {
+        $finalAnswer = 'The correct answer is provided above with explanation.';
+    }
+
+    /* =====================================================
+     * 4. IMAGES
+     * ===================================================== */
+    $images = [];
+    foreach (['image1','image2','image3','image4'] as $img) {
+        if (!empty($post->$img)) {
+            $images[] = asset($post->$img);
+        }
+    }
+
+    /* =====================================================
+     * 5. SCHEMA GRAPH (GOOGLE SAFE)
+     * ===================================================== */
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            // Breadcrumbs
+            [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => array_values(array_filter([
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => 'Home',
+                        'item' => url('/'),
+                    ],
+                    $post->subject ? [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => $subject,
+                        'item' => url('/subject/'.slug($post->subject->name)),
+                    ] : null,
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 3,
+                        'name' => $h1,
+                        'item' => $canonical,
+                    ],
+                ])),
+            ],
+
+            // QAPage
+            [
+                '@type' => 'QAPage',
+                'mainEntity' => [
+                    '@type' => 'Question',
+                    'name' => Str::limit($mainQuestionText, 110),
+                    'text' => trim($mainQuestionText . $optionText),
+                    'answerCount' => 1,
+                    'inLanguage' => 'bn',
+                    'author' => [
+                        '@type' => 'Organization',
+                        'name' => 'ExamDao',
+                        'url' => 'https://examdao.com',
+                    ],
+                    'about' => array_values(array_filter([
+                        $institution, // HSC
+                        $subject,          // Bangla 2nd Paper
+                        $post->board ? $post->board->name . ' Board' : null,
+                        $post->year ?? null,
+                    ])),
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => $finalAnswer,
+                        'author' => [
+                            '@type' => 'Organization',
+                            'name' => 'ExamDao',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    if (!empty($images)) {
+        $schema['@graph'][1]['mainEntity']['image'] = $images;
+    }
 @endphp
+
+<script type="application/ld+json">
+{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
 @endsection
 
-
 @section('content')
-
 <div class="min-h-screen bg-secondary-100">
     <div class="max-w-4xl mx-auto py-2 sm:py-4 px-2 sm:px-4">
 
         <div class="bg-white rounded-xl shadow-xl p-5 md:p-6 mb-8 border-t-4 border-primary-600">
             <div class="flex justify-between items-start mb-4 border-b pb-3">
-                
-                {{-- Meta Data using helper --}}
                 <h1 class="text-sm font-bold text-secondary-900 leading-tight pr-4">
                     <span class="text-warning-700 p-1 px-2 rounded-md">
-                        {{ $meta = question_meta_text($post) }}
+                        {{ $h1 }}
                     </span>
                 </h1>
                 
-                {{-- Copy Question Button --}}
                 @php
                     $full_copy_data = strip_tags($post->article) . "\n\n";
-                    // Only append options to copy data if they are text-based (no image)
-                    if (!$post->url) {
-                        $full_copy_data .= "ক) " . strip_tags($post->a) . "\n" 
-                                         . "খ) " . strip_tags($post->b) . "\n" 
-                                         . "গ) " . strip_tags($post->c) . "\n" 
-                                         . "ঘ) " . strip_tags($post->d);
+                    if (!$post->url && !empty(trim(strip_tags($post->a)))) {
+                        $full_copy_data .= "ক) " . strip_tags($post->a) . "\nখ) " . strip_tags($post->b) . "\nগ) " . strip_tags($post->c) . "\nঘ) " . strip_tags($post->d);
                     }
                 @endphp
                 <button id="copy-question-btn" class="copy-btn flex items-center gap-1 text-secondary-500 hover:text-secondary-700 text-xs font-medium transition duration-150 ease-in-out flex-shrink-0" data-copy="{{ $full_copy_data }}">
-                    <x-icons.copy />
-                    Copy
+                    <x-icons.copy /> Copy
                 </button>
             </div>
             
-            {{-- Question Content --}}
-            <div class="text-base text-secondary-800 mb-4 leading-relaxed">
-                {!! $post->article ?? $meta !!}
+            <div class="text-base text-secondary-800 mb-4 leading-relaxed text-justify">
+                {!! nl2br($post->article ?? "") !!}
             </div>
 
-            {{-- Image Display (Full Width) --}}
-            @if ($post->url)
-                <div class="mb-4 bg-white rounded-lg border border-secondary-200 overflow-hidden w-full">
-                    <a href="{{ asset($post->url) }}">
-                        <img src="{{ asset($post->url) }}" 
-                            alt="{{ $meta ?? ''}}"
-                            class="w-full h-auto block" />
-                    </a>
-                </div>
+            @if ($post->image1)
+                @foreach(['image1', 'image2', 'image3', 'image4'] as $imageField)
+                    @if ($post->$imageField)
+                        <div class="mb-4 bg-white rounded-lg border border-secondary-200 overflow-hidden w-full shadow-sm">
+                            <a href="{{ asset($post->$imageField) }}" target="_blank">
+                                <img src="{{ asset($post->$imageField) }}" alt="{{ $h1 }} - Part {{ $loop->iteration }}" class="w-full h-auto block" />
+                            </a>
+                        </div>
+                    @endif
+                @endforeach
             @else
-                {{-- Only show text options if there is no image --}}
+                @if(!empty(trim(strip_tags($post->a))))
                 <div class="space-y-2 text-secondary-700 text-sm">
-                    <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
-                        <span class="font-bold text-primary-500 min-w-4 inline-block mr-1">ক)</span> {!! $post->a !!}
-                    </p>
-                    <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
-                        <span class="font-bold text-primary-500 min-w-4 inline-block mr-1">খ)</span> {!! $post->b !!}
-                    </p>
-                    <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
-                        <span class="font-bold text-primary-500 min-w-4 inline-block mr-1">গ)</span> {!! $post->c !!}
-                    </p>
-                    <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
-                        <span class="font-bold text-primary-500 min-w-4 inline-block mr-1">ঘ)</span> {!! $post->d !!}
-                    </p>
+                    @foreach(['a'=>'ক','b'=>'খ','c'=>'গ','d'=>'ঘ'] as $key => $label)
+                        @if(!empty(trim(strip_tags($post->$key))))
+                        <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
+                            <span class="font-bold text-primary-500 mr-1">{{ $label }})</span> {!! $post->$key !!}
+                        </p>
+                        @endif
+                    @endforeach
                 </div>
+                @endif
             @endif
             
-            {{-- Answer Section --}}
             <div class="mt-6">
-                <button id="answer-toggle" class="w-full text-left p-3 bg-primary-500 text-white font-bold text-base rounded-lg shadow-md hover:bg-primary-600 transition duration-200 flex justify-between items-center">
-                    <span>Show Answer & Explanation</span>
+                <button id="answer-toggle" class="w-full text-left p-3 bg-primary-500 text-white text-base rounded-lg shadow-md flex justify-between items-center">
+                    <span>উত্তর ও ব্যাখ্যা</span>
                     <x-icons.down-arrow id="toggle-icon" />
                 </button>
 
-                <div id="answer-content" class="hidden mt-3 pt-3 border-t border-secondary-200">
-                    
-                    <div class="p-4 bg-warning-100 text-warning-800 rounded-lg border border-warning-400 font-semibold flex items-center shadow-sm mb-4 relative">
-                        <x-icons.tick-round class="w-6 h-6 text-warning-600 flex-shrink-0" />
-                        
-                        <div class="flex items-baseline w-full justify-between">
-                            <div class="flex items-center text-sm">
-                                <span class="uppercase tracking-wider mr-2">Correct Answer:</span> 
-                                <span class="text-xl font-extrabold text-primary-700">
-                                    @if(strtoupper($post->category) === 'MCQ')
-                                        {{ $post->ans }}
-                                    @elseif(strtoupper($post->category) === 'CQ')
-                                        {{ $post->answer }}
-                                    @else
-                                        {{-- Optional fallback --}}
-                                        N/A
-                                    @endif
-                                </span>
+                <div id="answer-content" class="hidden mt-3 pt-3 border-t">
+                    @php $haveAnswer = $post->ans || ($post->answer && $post->answer->text); @endphp
+                    @if ($haveAnswer)
+                    <div class="p-4 bg-warning-100 text-warning-800 rounded-lg border border-warning-400 flex items-center shadow-sm mb-4 relative">
+                        <x-icons.tick-round class="w-6 h-6 text-warning-600 mr-2" />
+                        <span class="text-xl font-extrabold text-primary-700">
+                            {{ (strtoupper($post->category) === 'MCQ') ? $post->ans : ($post->answer->text ?? "") }}
+                        </span>
+                    </div>
+                    @endif
+
+                    @if ($post->explanation)
+                        <div class="pt-2">
+                            <h3 class="text-lg font-bold text-primary-700 mb-2">ব্যাখ্যা</h3>
+                            <div class="text-sm bg-primary-50 p-4 rounded-lg border border-primary-200">
+                                {!! nl2br($post->explanation) !!}
                             </div>
                         </div>
-                        
-                        {{-- Update the data-copy attribute to match the displayed logic --}}
-                        <button class="copy-btn copy-answer-btn absolute top-2 right-2 flex items-center gap-1 text-warning-700 hover:text-primary-700 text-xs font-medium transition duration-150 flex-shrink-0" 
-                            data-copy="{{ strtoupper($post->category) === 'MCQ' ? $post->ans : $post->answer }}">
-                            <x-icons.copy />
-                            Copy Answer
-                        </button>
-                    </div>
-
-                    @if ($post->explanation ?? false)
-                    <div class="pt-2">
-                        <h3 class="text-lg font-bold text-primary-700 mb-2">Expert Explanation</h3>
-                        <div class="text-secondary-700 leading-relaxed text-sm bg-primary-50 p-4 rounded-lg border border-primary-200 shadow-inner">
-                            {!! $post->explanation !!}
-                        </div>
-                    </div>
                     @endif
                 </div>
             </div>
         </div>
 
-        {{-- Discussion Section --}}
+        {{-- Fact Table --}}
+        <div class="mb-8 border rounded-xl overflow-hidden bg-white shadow-sm border-secondary-200">
+            <div class="bg-secondary-50 px-4 py-2 border-b text-[10px] font-bold text-secondary-500 uppercase">Resource Details</div>
+            <table class="w-full text-xs sm:text-sm text-left text-secondary-700">
+                <tbody class="divide-y">
+                    @foreach(['Exam' => $institution, 'Subject' => $subject, 'Chapter' => $post->chapter, 'Board' => $post->board->name, 'Year' => $post->year] as $label => $value)
+                        @if($value)
+                        <tr>
+                            <td class="px-4 py-2.5 font-semibold bg-secondary-50/50 w-1/3">{{ $label }}</td>
+                            <td class="px-4 py-2.5">{{ $value }}</td>
+                        </tr>
+                        @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
         @include('partials.discussion-section', ['post' => $post, 'comments' => $post->comments])
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.MathJax) {
-        MathJax.typesetPromise();
-    }
-});
-</script>
-@endpush

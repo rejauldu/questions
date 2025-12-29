@@ -1,81 +1,71 @@
-<section class="bg-primary-800 text-center py-10 sm:py-20 md:py-24 lg:py-28">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center space-y-4 sm:space-y-5">
+<section class="relative bg-primary-800 pt-6 pb-8 sm:pt-16 sm:pb-20 overflow-hidden">
+    {{-- Subtle background glow --}}
+    <div class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10">
+        <div class="absolute -top-12 -left-12 w-64 h-64 bg-warning-400 rounded-full blur-3xl"></div>
+    </div>
 
-        {{-- Tagline (Order 1 on all screens) --}}
-        <p class="px-3 py-1 mx-auto bg-primary-600 text-white rounded-full text-xs 
-            font-medium uppercase tracking-widest w-max shadow-md order-1 hidden sm:block">
-            Past Questions, Schedules & AI Guidance
-        </p>
+    <div class="relative max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
 
-        {{-- Main Headings (Order 2 on all screens) --}}
-        <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-snug order-2 max-w-4xl">
-            The Easiest Way to Master <span class="text-warning-400">Past Questions</span> & Schedules.
+        {{-- Compact Tagline --}}
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary-100 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 sm:mb-6">
+            <span class="w-1.5 h-1.5 bg-warning-400 rounded-full animate-pulse"></span>
+            Past Questions & AI Guidance
+        </div>
+
+        {{-- Main Heading - Reduced sizes for mobile --}}
+        <h1 class="text-2xl sm:text-5xl font-extrabold text-white leading-tight mb-6 max-w-3xl px-2">
+            Master <span class="text-warning-400">Past Questions</span> for SSC, HSC & BCS
         </h1>
 
-        {{-- Sub-heading (MOBILE: order-4 | DESKTOP: order-3) --}}
-        <h2 class="text-lg sm:text-2xl font-semibold text-primary-200 order-4 md:order-3 pt-2 sm:pt-0 hidden md:block">
-            Use the box below to quickly **search by Keyword** or explore all your options below.
-        </h2>
-        
-        {{-- Primary Actions Container (Text Search Input) --}}
-        <div class="flex flex-col items-center space-y-4 order-3 md:order-5 w-full max-w-xl">
-            
-            {{-- Text Input Search (Standard Search) --}}
-            <form action="{{ route('questions.index') }}" method="GET" class="flex w-full">
-                <div class="flex items-center bg-white rounded-xl shadow-2xl w-full
-                            transition-all duration-300 p-1 
-                            focus-within:ring-4 focus-within:ring-warning-400/70 focus-within:shadow-warning-400/50"> 
-
+        {{-- Search Container - Slimmer padding --}}
+        <div class="w-full max-w-xl bg-white/5 backdrop-blur-md p-1.5 rounded-xl border border-white/10 mb-8">
+            <form action="{{ route('questions.index') }}" method="GET" class="relative">
+                <div class="flex items-center bg-white rounded-lg overflow-hidden p-0.5 shadow-lg">
                     <input
                         type="text"
                         name="q"
-                        placeholder="E.g., 'Thermodynamics Final 2022' or 'Electrical Engineering'"
-                        class="w-full text-secondary-800 placeholder-secondary-500 text-base sm:text-lg py-2 pl-4 sm:pl-6
-                            border-none outline-none focus:outline-none 
-                            focus:ring-0 focus:border-0 p-0 m-0 bg-transparent"
+                        placeholder="Search: 'HSC ICT 2024'"
+                        class="w-full text-slate-800 placeholder-slate-400 text-sm sm:text-base py-2.5 px-4 border-none outline-none focus:ring-0 bg-transparent"
                         value="{{ $search ?? '' }}" />
                     
-                    <button
-                        type="submit"
-                        class="flex items-center justify-center bg-primary-600 text-white rounded-lg 
-                                h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 transition duration-300 
-                                hover:bg-primary-500 shadow-lg transform hover:scale-105"
-                        aria-label="Search">
-                        <x-icons.search class="w-6 h-6"/>
+                    <button type="submit" class="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2.5 rounded-md transition-all active:scale-95">
+                        <x-icons.search class="w-5 h-5"/>
                     </button>
                 </div>
             </form>
-
-            {{-- New: Alternative Search/Action Links --}}
-            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full justify-center">
-
-                {{-- Link to Dropdown Filter Search Page --}}
-                <a href="{{ route('search') }}" 
-                    class="inline-flex items-center justify-center bg-primary-500 text-white text-sm font-bold 
-                            px-4 py-2 rounded-full shadow-lg transition duration-300 
-                            hover:bg-primary-400 hover:shadow-xl transform hover:scale-[1.03] w-full sm:w-auto">
-                    <x-icons.funnel/>
-                    Use Dropdown Filters
-                </a>
-
-                {{-- Link to Chatbot Page --}}
-                <a href="{{ url('/chatbot') }}"
-                    class="inline-flex items-center justify-center bg-warning-400 text-secondary-900 text-sm font-extrabold 
-                            px-4 py-2 rounded-full shadow-lg transition duration-300 
-                            hover:bg-warning-300 hover:shadow-xl transform hover:scale-[1.03] 
-                            tracking-wide w-full sm:w-auto"> 
-                    <x-icons.chatbot/>
-                    Ask the <strong>AI Chatbot</strong>
-                </a>
-            </div>
-            
         </div>
 
+        {{-- Institution Grid - Compact 2x2 for mobile --}}
+        <div class="w-full max-w-4xl">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                @foreach($institutions as $inst)
+                <a href="{{ route('exam.show', $inst->slug) }}" 
+                   class="group flex items-center gap-3 p-3 bg-white/10 border border-white/10 rounded-xl transition-all hover:bg-white hover:shadow-xl">
+                    
+                    {{-- Mini Icon --}}
+                    <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 text-white font-bold text-xs group-hover:bg-primary-100 group-hover:text-primary-600">
+                        {{ strtoupper(substr($inst->name, 0, 1)) }}
+                    </div>
 
-        {{-- Subtext (Order 6 on all screens) --}}
-        <p class="text-primary-200/60 max-w-3xl mx-auto text-sm order-6 md:order-6 pt-2">
-            * <strong>Keyword Search</strong> offers fast, full-text matching. <strong>Dropdown Filters</strong> provide precise category selection.
-        </p>
+                    <span class="text-xs font-bold text-white group-hover:text-slate-800 truncate text-left">
+                        {{ institution($inst->name) }}
+                    </span>
+                </a>
+                @endforeach
+            </div>
+        </div>
 
+        {{-- Action Links - Tighter spacing --}}
+        <div class="mt-6 flex items-center justify-center gap-6">
+            <a href="{{ url('/chatbot') }}" class="flex items-center gap-1.5 text-primary-200 hover:text-warning-400 transition-colors text-[11px] font-bold uppercase tracking-tight">
+                <x-icons.chatbot class="w-4 h-4"/>
+                AI Assistant
+            </a>
+            <div class="w-px h-3 bg-white/20"></div>
+            <a href="{{ route('search') }}" class="flex items-center gap-1.5 text-primary-200 hover:text-warning-400 transition-colors text-[11px] font-bold uppercase tracking-tight">
+                <x-icons.funnel class="w-4 h-4"/>
+                Filters
+            </a>
+        </div>
     </div>
 </section>

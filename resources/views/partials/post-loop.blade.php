@@ -1,27 +1,33 @@
 {{-- Results Container --}}
 <div id="search-results-container">
-    <p class="text-sm sm:text-base font-semibold text-secondary-700 mb-4">
-        Showing {{ $posts->count() }} of {{ $posts->total() }} Questions (10 per page)
-    </p>
+    <div class="flex items-center justify-between mb-6 px-2">
+        <p class="text-xs sm:text-sm font-medium text-slate-500 italic">
+            Showing <span class="text-slate-900 font-bold">{{ $posts->count() }}</span> of {{ $posts->total() }} results
+        </p>
+    </div>
 
     @if($posts->isEmpty())
-        <div class="text-center py-8 sm:py-16 bg-warning-50 rounded-lg border border-warning-200">
-            <p class="text-lg sm:text-xl text-warning-700 font-medium">No questions matched your search criteria.</p>
-            <p class="text-xs sm:text-sm text-warning-600 mt-1 sm:mt-2">Try adjusting your filters.</p>
+        <div class="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            <div class="mb-3 text-slate-400">
+                <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <p class="text-slate-600 font-medium">No questions found matching your criteria.</p>
         </div>
     @else
-        <div class="space-y-6 sm:space-y-8">
+        <div class="space-y-4">
             @foreach($posts as $post)
-                <div class="border border-secondary-200 p-4 sm:p-6 rounded-xl bg-white shadow-lg hover:shadow-xl transition">
+                <div class="group relative bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl hover:border-primary-400 hover:shadow-md transition-all duration-300">
                     
-                    {{-- Top Bar --}}
-                    <div class="flex justify-between items-start mb-2 sm:mb-3">
-                        <div class="text-xs sm:text-sm font-semibold text-warning-700 flex flex-wrap gap-x-2 sm:gap-x-4 justify-start">
-                            <h4>{{ $q_meta = question_meta_text($post) }}</h4>
+                    {{-- Top Bar: Meta & Actions --}}
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-primary-50 text-primary-700 border border-primary-100">
+                                {{ $q_meta = question_meta_text($post) }}
+                            </span>
                         </div>
 
                         @php
-                            $copy_data = $post->url 
+                            $copy_data = $post->image1 
                                 ? strip_tags($post->article) 
                                 : strip_tags($post->article) . "\n\n" 
                                     . "ক) " . strip_tags($post->a) . "\n" 
@@ -30,59 +36,56 @@
                                     . "ঘ) " . strip_tags($post->d);
                         @endphp
 
-                        <button class="copy-btn flex items-center gap-1 text-secondary-500 hover:text-secondary-700 text-xs sm:text-sm font-medium transition duration-150 ease-in-out flex-shrink-0 whitespace-nowrap" data-copy="{{ $copy_data }}">
-                            <x-icons.copy/>
-                            Copy
+                        <button class="copy-btn flex items-center gap-1.5 text-slate-400 hover:text-primary-600 transition-colors duration-200" 
+                                data-copy="{{ $copy_data }}" 
+                                title="Copy Question">
+                            <x-icons.copy class="w-4 h-4"/>
+                            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Copy</span>
                         </button>
                     </div>
 
                     {{-- Question Content --}}
                     <a href="{{ route('questions.show', ['question' => $post->id, 'slug' => url_slug($post->article, $q_meta)]) }}"
-                        class="block group question-card-link pt-2 border-t border-secondary-100">
+                        class="block">
 
-                        @if ($post->url)
-                            {{-- Layout with Image --}}
-                            <div class="flex flex-row items-center space-x-4 w-full">
-                                
-                                {{-- Fixed Square Thumbnail --}}
+                        @if ($post->image1)
+                            <div class="flex gap-4 items-start">
+                                {{-- Thumbnail --}}
                                 <div class="flex-shrink-0">
-                                    <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg border border-secondary-200 overflow-hidden shadow-sm relative">
-                                        <img src="{{ asset($post->url) }}" 
-                                            alt="Question Image" 
-                                            class="absolute inset-0 w-full h-full object-cover object-center" />
+                                    <div class="w-20 h-20 sm:w-24 sm:h-24 bg-slate-100 rounded-xl overflow-hidden border border-slate-100 relative group-hover:border-primary-200 transition-all">
+                                        <img src="{{ asset($post->image1) }}" 
+                                             alt="Question Visual" 
+                                             class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     </div>
                                 </div>
 
-                                {{-- Article Text (Max 4 Lines) --}}
+                                {{-- Text --}}
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-base sm:text-lg font-bold text-secondary-900 leading-snug line-clamp-3">
-                                        {!! $post->article !!}
+                                    <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed line-clamp-3 group-hover:text-primary-700 transition-colors">
+                                        {!! nl2br($post->article ?? "") !!}
                                     </h3>
                                 </div>
                             </div>
                         @else
-                            {{-- Text Only Layout --}}
-                            <div class="mb-2 sm:mb-4">
-                                <h3 class="ml-1 sm:ml-2 text-base sm:text-lg md:text-lg font-bold text-secondary-900 line-clamp-4">
-                                    {!! $post->article !!}
+                            {{-- Text Only --}}
+                            <div class="relative">
+                                <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed line-clamp-4 text-justify group-hover:text-primary-700 transition-colors">
+                                    {!! nl2br($post->article ?? "") !!}
                                 </h3>
-                            </div>
-
-                            {{-- Options --}}
-                            <div class="space-y-1 sm:space-y-2 text-secondary-700 ml-1 sm:ml-2 text-xs sm:text-sm">
-                                <p class="line-clamp-1">ক) {!! $post->a !!}</p>
-                                <p class="line-clamp-1">খ) {!! $post->b !!}</p>
-                                <p class="line-clamp-1">গ) {!! $post->c !!}</p>
-                                <p class="line-clamp-1">ঘ) {!! $post->d !!}</p>
+                                
+                                {{-- Subtle decoration --}}
+                                <div class="mt-3 flex items-center gap-1 text-primary-500 text-[10px] font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
+                                    View Full Question <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                                </div>
                             </div>
                         @endif
-
                     </a>
                 </div>
             @endforeach
         </div>
 
-        <div class="mt-6 sm:mt-8 flex justify-center">
+        {{-- Professional Pagination --}}
+        <div class="mt-10 mb-6 px-4">
             {{ $posts->links() }}
         </div>
     @endif

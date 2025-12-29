@@ -4,15 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Institution;
 
 class PageController extends Controller
 {
     public function home()
     {
-        return view('home.index', [
-            'title' => 'Home - ICT4Today',
-            'description' => 'ICT tutorials, Laravel, Vue, Tailwind tips, and public exam questions.'
-        ]);
+        $institutions = Institution::orderBy('name')->get();
+        return view('home.index', compact('institutions'));
     }
 
     public function contact()

@@ -8,23 +8,32 @@
         </p>
 
         {{-- Final CTAs --}}
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-10">
             
-            {{-- Primary CTA: Go back to search (since it's the core action) --}}
             <a href="{{ route('questions.index') }}"
                 class="inline-flex items-center justify-center bg-primary-600 text-white text-lg font-bold 
                        px-8 py-3 rounded-xl shadow-lg transition duration-300 
                        hover:bg-primary-700 hover:shadow-xl transform hover:scale-[1.02]">
-                Start Your Search Now &rarr;
+                Search SSC & HSC Question Bank &rarr;
             </a>
 
-            {{-- Secondary CTA: Sign Up/Register --}}
             <a href="{{ route('register') }}" 
                 class="inline-flex items-center justify-center bg-secondary-200 text-primary-700 text-lg font-semibold 
                        px-8 py-3 rounded-xl shadow-md transition duration-300 
                        hover:bg-secondary-300 hover:text-primary-800">
-                Create a Free Account
+                Join ExamDao for Free
             </a>
+        </div>
+
+        {{-- SEO Contextual Block (Strong tags reduced for better readability) --}}
+        <div class="mt-12 text-sm text-secondary-500 max-w-4xl mx-auto leading-relaxed border-t border-gray-100 pt-8">
+            <p>
+                ExamDao provides a centralized hub for students targeting Board Exams (SSC, HSC), 
+                University Admission, and Competitive Job Exams (BCS). 
+                By practicing with our verified past year questions and using our 
+                <strong>AI-driven solutions</strong>, candidates can identify exam patterns and boost their 
+                confidence for the 2025-2026 academic sessions.
+            </p>
         </div>
     </div>
 </section>

@@ -1,8 +1,8 @@
 {{-- This partial requires $post (for the form action) and $comments (for the list) --}}
 
 <div class="mt-8">
-    <h2 class="text-2xl font-extrabold text-secondary-900 mb-6 border-b pb-3 border-primary-300">
-        Discussion ({{ count($comments ?? []) }})
+    <h2 class="text-xl font-bold text-secondary-900 mb-4">
+        Discussion <span class="text-sm font-normal text-secondary-500">— {{ $h1 }}</span>
     </h2>
 
     {{-- 1. Comment Form Section (Visible only to logged-in users) --}}

@@ -36,9 +36,9 @@
                     </a>
                 </li>
                 {{-- Add a Dashboard/Profile Link for Logged-In Users Here --}}
-                @auth
+                @if(auth()->check() && auth()->user()->role === 'admin')
                 <li>
-                    <a href="{{ url('/dashboard') }}"
+                    <a href="{{ url('/questions-create') }}"
                         class="{{ request()->routeIs('dashboard') ? 'text-yellow-400 font-bold border-b-2 border-yellow-400 pb-1' : 'text-white hover:text-yellow-300' }} transition duration-200 ease-in-out">
                         Dashboard
                     </a>

@@ -20,6 +20,7 @@ class Post extends Model
         'c',
         'd',
         'ans',
+        'explanation',
         'answer_id',
         'subject_id',
         'chapter',
@@ -28,7 +29,10 @@ class Post extends Model
         'year',
         'class',
         'institution_id',
-        'url'
+        'image1',
+        'image2',
+        'image3',
+        'image4'
     ];
 
     protected $casts = [

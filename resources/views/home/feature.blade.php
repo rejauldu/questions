@@ -12,7 +12,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             {{-- Feature 1: Keyword Search (Speed) --}}
-            <div class="p-6 bg-primary-50 rounded-xl shadow-lg border-t-4 border-warning-400 text-center transition duration-300 hover:shadow-xl">
+            <div class="p-6 bg-primary-50 rounded-xl shadow-sm border-t-4 border-warning-400 text-center transition duration-300 hover:shadow-xl">
                 <div class="text-warning-600 mx-auto mb-4">
                     <x-icons.search class="sm:w-10 sm:h-10 mx-auto" />
                 </div>
@@ -26,7 +26,7 @@
             </div>
 
             {{-- Feature 2: Advanced Filters (Precision) --}}
-            <div class="p-6 bg-primary-50 rounded-xl shadow-lg border-t-4 border-primary-600 text-center transition duration-300 hover:shadow-xl">
+            <div class="p-6 bg-primary-50 rounded-xl shadow-sm border-t-4 border-primary-600 text-center transition duration-300 hover:shadow-xl">
                 <div class="text-primary-600 mx-auto mb-4">
                     <x-icons.funnel class="sm:w-10 sm:h-10 mx-auto mr-auto" />
                 </div>
@@ -40,7 +40,7 @@
             </div>
 
             {{-- Feature 3: AI Chatbot (Guidance) --}}
-            <div class="p-6 bg-primary-50 rounded-xl shadow-lg border-t-4 border-warning-400 text-center transition duration-300 hover:shadow-xl">
+            <div class="p-6 bg-primary-50 rounded-xl shadow-sm border-t-4 border-warning-400 text-center transition duration-300 hover:shadow-xl">
                 <div class="text-warning-600 mx-auto mb-4">
                     <x-icons.chatbot class="sm:w-10 sm:h-10 mr-auto mx-auto"/>
                 </div>

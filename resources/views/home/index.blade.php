@@ -2,8 +2,8 @@
 
 @section('seo')
 @php
-    $title = "ExamDao - Smart Question Bank for SSC, HSC, Admission, NU & BCS";
-    $description = "Prepare smarter with ExamDao — access SSC, HSC, Admission, NU, and BCS question banks with chapter-wise practice sets, past papers, model tests, and expert solutions to boost your exam performance.";
+    $title = "ExamDao - Smart Question Bank for SSC, HSC & BCS";
+    $description = "Prepare smarter with ExamDao. Access SSC, HSC, BCS, and Admission question banks with chapter-wise practice, model tests, and expert solutions.";
     $image = url('/images/og-home.webp');   // Recommended: 1200x630 optimized WebP banner
     $canonical = url()->current();
 @endphp
@@ -15,4 +15,5 @@
     @include('home.content')
     @include('home.planner')
     @include('home.cta')
+    @include('home.faq')
 @endsection

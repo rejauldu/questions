@@ -156,3 +156,43 @@ if (!function_exists('public_html_path')) {
         return base_path('public_html' . ($path ? DIRECTORY_SEPARATOR . $path : ''));
     }
 }
+if (!function_exists('institution')) {
+    function institution(?string $name): string
+    {
+        if (!$name) {
+            return '';
+        }
+
+        return trim(explode('/', $name)[0]);
+    }
+}
+if (!function_exists('subject')) {
+    function subject(?string $subject): string
+    {
+        if (!$subject) {
+            return '';
+        }
+
+        $subject = trim($subject);
+
+        // ICT should stay as-is
+        if (strtoupper($subject) === 'ICT') {
+            return 'ICT';
+        }
+
+        return $subject . ' paper';
+    }
+}
+if (!function_exists('slug')) {
+    /**
+     * Convert a string into a URL-friendly slug.
+     *
+     * @param string $name
+     * @return string
+     */
+    function slug(string $name): string
+    {
+        // Use Laravel Str helper for slug
+        return \Illuminate\Support\Str::slug($name);
+    }
+}
