@@ -26,22 +26,26 @@
                             </span>
                         </div>
 
-                        @php
-                            $copy_data = $post->image1 
-                                ? strip_tags($post->article) 
-                                : strip_tags($post->article) . "\n\n" 
-                                    . "ক) " . strip_tags($post->a) . "\n" 
-                                    . "খ) " . strip_tags($post->b) . "\n" 
-                                    . "গ) " . strip_tags($post->c) . "\n" 
-                                    . "ঘ) " . strip_tags($post->d);
-                        @endphp
+                        <div class="flex items-center gap-3">
+                            {{-- Bookmark Toggle Removed --}}
 
-                        <button class="copy-btn flex items-center gap-1.5 text-slate-400 hover:text-primary-600 transition-colors duration-200" 
-                                data-copy="{{ $copy_data }}" 
-                                title="Copy Question">
-                            <x-icons.copy class="w-4 h-4"/>
-                            <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Copy</span>
-                        </button>
+                            @php
+                                $copy_data = $post->image1 
+                                    ? strip_tags($post->article) 
+                                    : strip_tags($post->article) . "\n\n" 
+                                        . "ক) " . strip_tags($post->a) . "\n" 
+                                        . "খ) " . strip_tags($post->b) . "\n" 
+                                        . "গ) " . strip_tags($post->c) . "\n" 
+                                        . "ঘ) " . strip_tags($post->d);
+                            @endphp
+
+                            <button class="copy-btn flex items-center gap-1.5 text-slate-400 hover:text-primary-600 transition-colors duration-200" 
+                                    data-copy="{{ $copy_data }}" 
+                                    title="Copy Question">
+                                <x-icons.copy class="w-4 h-4"/>
+                                <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Copy</span>
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Question Content --}}
@@ -61,7 +65,7 @@
 
                                 {{-- Text --}}
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed line-clamp-3 group-hover:text-primary-700 transition-colors">
+                                    <h3 class="text-base text-slate-800 leading-relaxed line-clamp-3 group-hover:text-primary-700 transition-colors">
                                         {!! nl2br($post->article ?? "") !!}
                                     </h3>
                                 </div>
@@ -69,14 +73,9 @@
                         @else
                             {{-- Text Only --}}
                             <div class="relative">
-                                <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed line-clamp-4 text-justify group-hover:text-primary-700 transition-colors">
+                                <h3 class="text-base text-slate-800 leading-relaxed line-clamp-4 text-justify group-hover:text-primary-700 transition-colors">
                                     {!! nl2br($post->article ?? "") !!}
                                 </h3>
-                                
-                                {{-- Subtle decoration --}}
-                                <div class="mt-3 flex items-center gap-1 text-primary-500 text-[10px] font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
-                                    View Full Question <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                                </div>
                             </div>
                         @endif
                     </a>

@@ -8,8 +8,7 @@
                 <a href="{{ url('/') }}" class="text-3xl font-black text-yellow-400 hover:text-yellow-300 transition duration-150">ExamDao</a>
                 
                 <p class="text-gray-300 text-sm max-w-sm leading-relaxed">
-                    ExamDao is Bangladesh's premier digital platform for SSC and HSC exam preparation. We provide a massive archive of Past Exam Questions, university Admission test papers, and verified BCS solutions to help students excel in their academic and professional journeys.
-                </p>
+                    Bangladesh's premier digital platform for SSC and HSC exam preparation. Massive archives of Past Exam Questions, Admission papers, and verified BCS solutions.
                 
                 {{-- Social Links --}}
                 <div class="flex space-x-4">

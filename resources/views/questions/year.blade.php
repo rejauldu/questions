@@ -2,8 +2,9 @@
 
 @section('seo')
 @php
-    $title = $subject->name . ' Questions by Year - ' . institution($institution->name);
-    $description = 'Browse ' . $subject->name . ' exam questions by year for ' . institution($institution->name);
+    // $displayName আমরা কন্ট্রোলার থেকে পাস করেছি (যেমন: Bangla)
+    $title = $displayName . ' Questions by Year - ' . institution($institution->name);
+    $description = 'Browse ' . $displayName . ' exam questions by year for ' . institution($institution->name);
     $canonical = url()->current();
 @endphp
 @endsection
@@ -18,7 +19,8 @@
             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
             <a href="{{ route('exam.show', $institution->slug) }}" class="hover:text-primary-600">{{ institution($institution->name) }}</a>
             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-            <span class="font-semibold text-gray-800">{{ $subject->name }}</span>
+            {{-- সাবজেক্ট স্লাগ পেজে ফিরে যাওয়ার লিংক --}}
+            <a href="{{ route('exam.show', [$institution->slug, $subjectSlug]) }}" class="hover:text-primary-600">{{ $displayName }}</a>
         </nav>
 
         {{-- Header Section --}}
@@ -27,17 +29,16 @@
                 <span class="w-1.5 h-6 bg-primary-600 rounded-full"></span>
                 Select Year
             </h1>
-            <p class="text-xs text-gray-500 mt-1">Showing available exam years for {{ $subject->name }}</p>
+            <p class="text-xs text-gray-500 mt-1">Showing available exam years for {{ $displayName }}</p>
         </div>
 
         {{-- Years Grid --}}
-        {{-- Years are small, so we use a tight grid: 4 columns on mobile, 8 on desktop --}}
         <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mb-10">
             @foreach($years as $yr)
-                <a href="{{ route('exam.show', [$institution->slug, $subject->slug, $yr]) }}" 
+                {{-- এখানে $subjectSlug ব্যবহার করা হয়েছে যা জেনেরিক বা স্পেসিফিক উভয়ই হতে পারে --}}
+                <a href="{{ route('exam.show', [$institution->slug, $subjectSlug, $yr]) }}" 
                    class="group flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm hover:border-primary-500 hover:ring-1 hover:ring-primary-500 transition-all duration-200">
                     
-                    {{-- Calendar Icon Style --}}
                     <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 font-bold text-[10px] group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors mb-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -54,7 +55,7 @@
         {{-- Content Divider --}}
         <div class="flex items-center gap-4 mb-6">
             <span class="text-xs font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">
-                {{ $subject->name }} Feed
+                {{ $displayName }} Feed
             </span>
             <div class="w-full h-px bg-gray-200"></div>
         </div>
@@ -67,7 +68,7 @@
                 </div>
             @else
                 <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
-                    <p class="text-gray-400 text-sm">No questions found for this subject yet.</p>
+                    <p class="text-gray-400 text-sm">No questions found for {{ $displayName }} yet.</p>
                 </div>
             @endif
         </div>

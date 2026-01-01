@@ -168,11 +168,6 @@
 @endsection
 
 @push('scripts')
-<script>
-    const SUBJECTS_API_URL = "{{ route('api.posts.subjects-by-institution') }}";
-    const CURRENT_SUBJECT = @json($currentParams['subject_id'] ?? '');
-    const CURRENT_INSTITUTION_ID = @json($currentParams['institution_id'] ?? '');
-</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -9,6 +10,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\SubjectDateController;
 use App\Http\Controllers\SitemapController;
 
@@ -33,11 +35,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/questions-create', [QuestionController::class, 'createBlade'])->name('questions.create');
 });
 
+// Reading Mode Route
+Route::get('/read/{institution}/{subject}/{id}/{slug?}', [ReadingController::class, 'show'])
+    ->name('reading.mode');
+
+Route::get('/auth/status', [ProfileController::class, 'getStatus'])->name('auth.status');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/auth/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/auth/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/bookmarks/toggle', [BookmarkController::class, 'toggle'])->name('bookmarks.toggle')->middleware('auth');
+    Route::get('/auth/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
     Route::get('/sitemap', [SitemapController::class, 'generate']);
+    Route::post('/auth/reading/track-view', [ReadingController::class, 'trackView']);
 });
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');

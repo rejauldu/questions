@@ -8,6 +8,7 @@ use App\Models\Subject;
 use App\Models\Answer;
 use App\Models\Board;
 use App\Models\Comment;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 class Post extends Model
@@ -32,7 +33,8 @@ class Post extends Model
         'image1',
         'image2',
         'image3',
-        'image4'
+        'image4',
+        'user_id'
     ];
 
     protected $casts = [
@@ -68,5 +70,24 @@ class Post extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class)->latest();
+    }
+    /**
+     * Relationship: A post can be bookmarked by many users.
+     */
+    public function bookmarks(): HasMany
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+    // Inside App\Models\Post.php
+    public function isBookmarkedBy(?User $user): bool
+    {
+        if (!$user) return false;
+        
+        // Optimization: If the bookmarks are already loaded in the collection, use them
+        if ($this->relationLoaded('bookmarks')) {
+            return $this->bookmarks->where('user_id', $user->id)->isNotEmpty();
+        }
+
+        return $this->bookmarks()->where('user_id', $user->id)->exists();
     }
 }

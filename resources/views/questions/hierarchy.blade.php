@@ -2,8 +2,9 @@
 
 @section('seo')
 @php
-    $title = "{$year} {$subject->name} Questions - " . institution($institution->name);
-    $description = "Access previous year questions for {$year} {$subject->name} at " . institution($institution->name);
+    // কন্ট্রোলার থেকে আসা $displayName ব্যবহার করা হয়েছে (যেমন: Bangla)
+    $title = "{$year} {$displayName} Questions - " . institution($institution->name);
+    $description = "Access previous year questions for {$year} {$displayName} at " . institution($institution->name);
     $canonical = url()->current();
 @endphp
 @endsection
@@ -18,7 +19,8 @@
             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
             <a href="{{ route('exam.show', $institution->slug) }}" class="hover:text-primary-600">{{ institution($institution->name) }}</a>
             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-            <a href="{{ route('exam.show', [$institution->slug, $subject->slug]) }}" class="hover:text-primary-600">{{ $subject->name }}</a>
+            {{-- জেনেরিক সাবজেক্ট লিংকে ফিরে যাওয়ার জন্য $subjectSlug ব্যবহার --}}
+            <a href="{{ route('exam.show', [$institution->slug, $subjectSlug]) }}" class="hover:text-primary-600">{{ $displayName }}</a>
             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
             <span class="font-semibold text-gray-800">{{ $year }}</span>
         </nav>
@@ -28,10 +30,10 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-900">
-                        {{ $subject->name }} <span class="text-primary-600">— {{ $year }}</span>
+                        {{ institution($institution->name) }} <span class="text-primary-600">— {{ $year }}</span>
                     </h1>
                     <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider font-medium">
-                        {{ institution($institution->name) }}
+                        {{ $displayName }}
                     </p>
                 </div>
                 
@@ -66,7 +68,8 @@
                         </div>
                         <h3 class="text-gray-900 font-bold">No Questions Found</h3>
                         <p class="text-gray-400 text-sm mt-1">We haven't uploaded the questions for this year yet.</p>
-                        <a href="{{ route('exam.show', [$institution->slug, $subject->slug]) }}" class="mt-4 inline-block text-primary-600 font-bold text-sm hover:underline">
+                        {{-- বছর না পাওয়া গেলে সাবজেক্ট পেজে ফিরে যাওয়ার লিংক --}}
+                        <a href="{{ route('exam.show', [$institution->slug, $subjectSlug]) }}" class="mt-4 inline-block text-primary-600 font-bold text-sm hover:underline">
                             Try another year →
                         </a>
                     </div>

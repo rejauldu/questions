@@ -10,12 +10,22 @@ use App\Models\Institution;
 use App\Models\Subject;
 use App\Services\Image2WebpService;
 use Illuminate\Support\Facades\Validator;
+use DB;
 
 class QuestionController extends Controller
 {
     public function __construct()
     {
+        // 1. First, ensure the user is logged in for these actions
         $this->middleware('auth')->only(['create', 'store', 'update']);
+
+        // 2. Second, ensure the logged-in user is an admin for creating/storing
+        $this->middleware(function ($request, $next) {
+            if (auth()->check() && auth()->user()->role !== 'admin') {
+                abort(403, 'Unauthorized action. Admin access only.');
+            }
+            return $next($request);
+        })->only(['create', 'store']);
     }
     
     /**
@@ -24,93 +34,110 @@ class QuestionController extends Controller
 
     public function index(Request $request) {
         $q = trim($request->input('q'));
-    
+
         // Only redirect if query string 'q' exists but is empty
         if ($request->has('q') && $q === '') {
             return redirect()->route('questions.index');
         }
-    
+
         $perPage = 10;
-    
+
         $query = Post::query()
             ->with(['institution', 'subject', 'board'])
             ->leftJoin('institutions', 'institutions.id', '=', 'posts.institution_id')
             ->leftJoin('subjects', 'subjects.id', '=', 'posts.subject_id')
             ->leftJoin('boards', 'boards.id', '=', 'posts.board_id');
-    
+
+        $user = auth()->user();
+
+        // 1. Join Viewed Posts & Select Base Columns
+        if ($user) {
+            $query->leftJoin('viewed_posts', function($join) use ($user) {
+                $join->on('posts.id', '=', 'viewed_posts.post_id')
+                    ->where('viewed_posts.user_id', '=', $user->id);
+            })
+            ->selectRaw('posts.*, CASE WHEN viewed_posts.id IS NULL THEN 0 ELSE 1 END as was_viewed');
+        } else {
+            $query->selectRaw('posts.*, 0 as was_viewed');
+        }
+
         if ($q) {
             $words = preg_split('/\s+/', $q);
-            $bindings = [];
-    
-            // Base relevance scoring
+            $fullSearch = "%{$q}%";
+            
+            // 2. Build Relevance Scoring with SelectRaw
+            // We use an array for bindings to keep it clean
+            $scoreBindings = [$fullSearch, $fullSearch, $fullSearch, $fullSearch, $fullSearch, $fullSearch];
+            
             $scoreSql = "(CASE
-                WHEN posts.article LIKE ? THEN 70
+                WHEN posts.article LIKE ? THEN 75
                 WHEN institutions.name LIKE ? THEN 90
-                WHEN subjects.name LIKE ? THEN 80
-                WHEN boards.name LIKE ? THEN 85
-                WHEN posts.chapter LIKE ? THEN 75
+                WHEN subjects.name LIKE ? THEN 90
+                WHEN boards.name LIKE ? THEN 75
+                WHEN posts.chapter LIKE ? THEN 50
+                WHEN posts.year LIKE ? THEN 90
                 ELSE 0
             END)";
-    
-            $bindings[] = "%{$q}%";
-            $bindings[] = "%{$q}%";
-            $bindings[] = "%{$q}%";
-            $bindings[] = "%{$q}%";
-            $bindings[] = "%{$q}%";
-    
-            // Word-level scoring
+
+            // Add word-level scoring to the SQL string and the bindings array
             foreach ($words as $word) {
                 $word = trim($word);
                 if ($word) {
+                    $w = "%{$word}%";
                     $scoreSql .= " + (CASE WHEN posts.article LIKE ? THEN 10 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
-    
-                    $scoreSql .= " + (CASE WHEN institutions.name LIKE ? THEN 15 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
-    
-                    $scoreSql .= " + (CASE WHEN subjects.name LIKE ? THEN 15 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
-    
-                    $scoreSql .= " + (CASE WHEN boards.name LIKE ? THEN 15 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
-    
-                    $scoreSql .= " + (CASE WHEN posts.chapter LIKE ? THEN 15 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
+                    $scoreSql .= " + (CASE WHEN institutions.name LIKE ? THEN 20 ELSE 0 END)";
+                    $scoreSql .= " + (CASE WHEN subjects.name LIKE ? THEN 20 ELSE 0 END)";
+                    $scoreSql .= " + (CASE WHEN boards.name LIKE ? THEN 20 ELSE 0 END)";
+                    $scoreSql .= " + (CASE WHEN posts.chapter LIKE ? THEN 10 ELSE 0 END)";
+                    $scoreSql .= " + (CASE WHEN posts.year LIKE ? THEN 20 ELSE 0 END)";
+                    
+                    // Push 6 bindings for each word
+                    array_push($scoreBindings, $w, $w, $w, $w, $w, $w);
                 }
             }
-    
-            $query->selectRaw("posts.*, {$scoreSql} as match_score", $bindings)
-                ->where(function ($subQuery) use ($q, $words) {
-    
-                    $subQuery->where('posts.article', 'LIKE', "%{$q}%")
-                        ->orWhere('institutions.name', 'LIKE', "%{$q}%")
-                        ->orWhere('subjects.name', 'LIKE', "%{$q}%")
-                        ->orWhere('boards.name', 'LIKE', "%{$q}%")
-                        ->orWhere('posts.chapter', 'LIKE', "%{$q}%");
-    
-                    foreach ($words as $word) {
-                        $word = trim($word);
-                        if ($word) {
-                            $subQuery->orWhere('posts.article', 'LIKE', "%{$word}%")
-                                ->orWhere('institutions.name', 'LIKE', "%{$word}%")
-                                ->orWhere('subjects.name', 'LIKE', "%{$word}%")
-                                ->orWhere('boards.name', 'LIKE', "%{$word}%")
-                                ->orWhere('posts.chapter', 'LIKE', "%{$word}%");
-                        }
+
+            // Apply the Score to the Select statement
+            $query->selectRaw("{$scoreSql} as match_score", $scoreBindings);
+
+            // 3. Apply the Search Filters (Where Clause)
+            $query->where(function ($subQuery) use ($q, $words) {
+                $full = "%{$q}%";
+                $subQuery->where('posts.article', 'LIKE', $full)
+                    ->orWhere('institutions.name', 'LIKE', $full)
+                    ->orWhere('subjects.name', 'LIKE', $full)
+                    ->orWhere('boards.name', 'LIKE', $full)
+                    ->orWhere('posts.chapter', 'LIKE', $full)
+                    ->orWhere('posts.year', 'LIKE', $full);
+
+                foreach ($words as $word) {
+                    $word = trim($word);
+                    if ($word) {
+                        $w = "%{$word}%";
+                        $subQuery->orWhere('posts.article', 'LIKE', $w)
+                            ->orWhere('institutions.name', 'LIKE', $w)
+                            ->orWhere('subjects.name', 'LIKE', $w)
+                            ->orWhere('boards.name', 'LIKE', $w)
+                            ->orWhere('posts.chapter', 'LIKE', $w)
+                            ->orWhere('posts.year', 'LIKE', $w);
                     }
-                })
-                ->orderByDesc('match_score')
+                }
+            });
+
+            // 4. Order by Score, Viewed Status, and Date
+            $query->orderByDesc('match_score')
+                ->orderBy('was_viewed', 'asc')
                 ->orderByDesc('posts.year')
                 ->orderByDesc('posts.created_at');
-    
+
         } else {
-            $query->select('posts.*')
+            // Simple Ordering if no search query
+            $query->orderBy('was_viewed', 'asc')
                 ->orderByDesc('posts.year')
                 ->orderByDesc('posts.created_at');
         }
-    
+
         $posts = $query->paginate($perPage)->withQueryString();
-    
+
         return view('questions.index', compact('posts', 'q'));
     }
 
@@ -175,37 +202,73 @@ class QuestionController extends Controller
             ]);
         }
     
-        // =====================
-        // 2. INSTITUTION
-        // =====================
         $institution = Institution::where('slug', $institutionSlug)->firstOrFail();
         $query->where('institution_id', $institution->id);
     
+        // =====================
+        // 2. NO SUBJECT (Display Unique Subjects)
+        // =====================
         if (!$subjectSlug) {
+            $allSubjects = Subject::where('institution_id', $institution->id)->get();
+    
+            // ১ ১ম ও ২য় পত্র বাদ দিয়ে ইউনিক লিস্ট তৈরি
+            $subjects = $allSubjects->unique(function ($item) {
+                return trim(str_replace(['1st', '2nd'], '', $item->name));
+            });
+    
             return view('questions.subject', [
                 'institution' => $institution,
-                'subjects' => Subject::where('institution_id', $institution->id)
-                    ->select('id', 'name', 'slug')
-                    ->get(),
+                'subjects' => $subjects,
                 'posts' => $query->paginate(10),
             ]);
         }
     
         // =====================
-        // 3. SUBJECT
+        // 3. SUBJECT (Generic vs Specific Logic)
         // =====================
-        $subject = Subject::where('slug', $subjectSlug)
-            ->where('institution_id', $institution->id)
-            ->firstOrFail();
+        
+        // চেক করা হচ্ছে স্লাগে '1st' বা '2nd' আছে কি না
+        $isSpecific = str_contains($subjectSlug, '1st') || str_contains($subjectSlug, '2nd');
     
-        $query->where('subject_id', $subject->id);
+        if ($isSpecific) {
+            // সরাসরি নির্দিষ্ট সাবজেক্টটি খুঁজে বের করা
+            $subject = Subject::where('slug', $subjectSlug)
+                ->where('institution_id', $institution->id)
+                ->firstOrFail();
+            
+            $relatedSubjectIds = [$subject->id];
+            $displayName = $subject->name;
+        } else {
+            // জেনেরিক নাম তৈরি করা (যেমন: 'bangla')
+            $baseName = str_replace('-', ' ', $subjectSlug);
+            
+            // ওই নামের সাথে মিল আছে এমন সকল সাবজেক্ট আইডি (১ম ও ২য় পত্র)
+            $relatedSubjectIds = Subject::where('institution_id', $institution->id)
+                ->where('name', 'LIKE', $baseName . '%')
+                ->pluck('id');
     
+            if ($relatedSubjectIds->isEmpty()) {
+                abort(404);
+            }
+    
+            // ডিসপ্লের জন্য একটি ডিফল্ট অবজেক্ট নেওয়া
+            $subject = Subject::whereIn('id', $relatedSubjectIds)->first();
+            $displayName = ucwords($baseName);
+        }
+    
+        $query->whereIn('subject_id', $relatedSubjectIds);
+    
+        // =====================
+        // 4. YEAR LOGIC
+        // =====================
         if (!$year) {
             return view('questions.year', [
                 'institution' => $institution,
                 'subject' => $subject,
+                'subjectSlug' => $subjectSlug,
+                'displayName' => $displayName,
                 'years' => Post::where('institution_id', $institution->id)
-                    ->where('subject_id', $subject->id)
+                    ->whereIn('subject_id', $relatedSubjectIds)
                     ->distinct()
                     ->orderByDesc('year')
                     ->pluck('year'),
@@ -213,14 +276,14 @@ class QuestionController extends Controller
             ]);
         }
     
-        // =====================
-        // 4. YEAR
-        // =====================
+        // নির্দিষ্ট বছর ফিল্টার করা
         $query->where('year', $year);
     
         return view('questions.hierarchy', [
             'institution' => $institution,
             'subject' => $subject,
+            'subjectSlug' => $subjectSlug,
+            'displayName' => $displayName,
             'year' => $year,
             'posts' => $query->paginate(10),
         ]);
@@ -231,29 +294,16 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        // Institutions
-        $institutions = Institution::orderBy('name')->get(['id', 'name']);
-
-        // Boards
-        $boards = Board::orderBy('name')->get(['id', 'name']);
-
-        // Years: last 6 years including current
-        $currentYear = date('Y');
-        $years = range(date('Y'), date('Y')-5);
-
-        // Classes dropdown
-        $classes = [
-            ['value' => 1, 'text' => '1st Year'],
-            ['value' => 2, 'text' => '2nd Year'],
-            ['value' => 3, 'text' => '3rd Year'],
-            ['value' => 4, 'text' => '4th Year'],
-        ];
-
-        return Inertia::render('Questions/Create', [
-            'institutions' => $institutions,
-            'boards' => $boards,   // ✅ added
-            'years' => $years,
-            'classes' => $classes,
+        return view('questions.create-blade', [
+            'institutions' => Institution::orderBy('name')->get(['id', 'name']),
+            'boards' => Board::orderBy('name')->get(['id', 'name']),
+            'years' => range(date('Y'), date('Y')-5),
+            'classes' => [
+                ['value' => 1, 'text' => '1st Year'],
+                ['value' => 2, 'text' => '2nd Year'],
+                ['value' => 3, 'text' => '3rd Year'],
+                ['value' => 4, 'text' => '4th Year'],
+            ]
         ]);
     }
 
@@ -453,59 +503,74 @@ class QuestionController extends Controller
             $request->query(),
             fn ($value) => $value !== null && $value !== ''
         );
-    
+
         if ($cleanQuery !== $request->query()) {
             return redirect()
                 ->route('search', $cleanQuery)
                 ->setStatusCode(301);
         }
-    
+
         // 1. Fetch available filter options
         $filters = $this->getAvailableFilters();
-    
+
         // 2. Build the query
         $query = Post::query();
-    
+
+        // --- VIEWED QUESTIONS LOGIC START ---
+        $user = auth()->user();
+        if ($user) {
+            $query->leftJoin('viewed_posts', function($join) use ($user) {
+                $join->on('posts.id', '=', 'viewed_posts.post_id')
+                    ->where('viewed_posts.user_id', '=', $user->id);
+            })
+            ->selectRaw('posts.*, CASE WHEN viewed_posts.id IS NULL THEN 0 ELSE 1 END as was_viewed');
+        } else {
+            $query->selectRaw('posts.*, 0 as was_viewed');
+        }
+        // --- VIEWED QUESTIONS LOGIC END ---
+
         if ($request->filled('institution_id')) {
-            $query->where('institution_id', $request->institution_id);
+            $query->where('posts.institution_id', $request->institution_id);
         }
-    
+
         if ($request->filled('subject_id')) {
-            $query->where('subject_id', $request->subject_id);
+            $query->where('posts.subject_id', $request->subject_id);
         }
-    
+
         if ($request->filled('board_id')) {
-            $query->where('board_id', $request->board_id);
+            $query->where('posts.board_id', $request->board_id);
         }
-    
+
         if ($request->filled('year')) {
-            $query->where('year', $request->year);
+            $query->where('posts.year', $request->year);
         }
-    
+
         if ($request->filled('class')) {
-            $query->where('class', $request->class);
+            $query->where('posts.class', $request->class);
         }
-    
+
+        // Update ordering to prioritize 'was_viewed' (0 comes before 1)
         $posts = $query->with(['institution', 'subject', 'board'])
-            ->orderBy('year', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('was_viewed', 'asc') // Priority 1: Unseen questions
+            ->orderBy('posts.year', 'desc') // Priority 2: Newest Year
+            ->orderBy('posts.created_at', 'desc') // Priority 3: Newest Database entry
             ->paginate(10)
             ->withQueryString();
-    
+
         $currentParams = array_merge($request->all(), [
             'institution_name' => $request->filled('institution_id')
                 ? Institution::find($request->institution_id)?->name
                 : null,
-    
+
             'subject_name' => $request->filled('subject_id')
                 ? Subject::find($request->subject_id)?->name
                 : null,
-    
+
             'board_name' => $request->filled('board_id')
                 ? Board::find($request->board_id)?->name
                 : null,
         ]);
-    
+
         return view('pages.search', [
             'initialFilters' => $filters,
             'posts' => $posts,

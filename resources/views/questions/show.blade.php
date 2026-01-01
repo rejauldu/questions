@@ -175,9 +175,9 @@
                 </button>
             </div>
             
-            <div class="text-base text-secondary-800 mb-4 leading-relaxed text-justify">
+            <p class="text-base text-secondary-800 mb-4 leading-relaxed text-justify">
                 {!! nl2br($post->article ?? "") !!}
-            </div>
+            </p>
 
             @if ($post->image1)
                 @foreach(['image1', 'image2', 'image3', 'image4'] as $imageField)
@@ -231,13 +231,44 @@
                 </div>
             </div>
         </div>
+        
+        {{-- Start Reading Mode Action --}}
+        <div class="mb-8">
+            <a href="{{ route('reading.mode', [
+                    'institution' => slug(institution($post->institution->name)), 
+                    'subject' => slug($post->subject->name), 
+                    'id' => $post->id, 
+                    'slug' => url_slug($post->article, question_meta_text($post))
+                ]) }}" 
+               class="group relative flex items-center justify-between p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl border border-slate-700 shadow-lg hover:shadow-primary-500/20 transition-all duration-300">
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-sm sm:text-base leading-tight">অনুশীলন করুন</h3>
+                        <p class="text-slate-400 text-xs mt-0.5">একটানা সকল প্রশ্নের সমাধান পড়ুন</p>
+                    </div>
+                </div>
+        
+                <div class="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-widest bg-slate-700/50 py-2 px-3 rounded-lg group-hover:bg-primary-600 group-hover:text-white transition-all">
+                    Start <x-icons.down-arrow class="w-4 h-4 -rotate-90" />
+                </div>
+        
+                {{-- Subtle background decoration --}}
+                <div class="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white/5 to-transparent rounded-r-2xl pointer-events-none"></div>
+            </a>
+        </div>
 
         {{-- Fact Table --}}
         <div class="mb-8 border rounded-xl overflow-hidden bg-white shadow-sm border-secondary-200">
             <div class="bg-secondary-50 px-4 py-2 border-b text-[10px] font-bold text-secondary-500 uppercase">Resource Details</div>
             <table class="w-full text-xs sm:text-sm text-left text-secondary-700">
                 <tbody class="divide-y">
-                    @foreach(['Exam' => $institution, 'Subject' => $subject, 'Chapter' => $post->chapter, 'Board' => $post->board->name, 'Year' => $post->year] as $label => $value)
+                    @foreach(['Exam' => $institution, 'Subject' => $subject, 'Chapter' => $post->chapter ?? null, 'Board' => $post->board->name ?? null, 'Year' => $post->year ?? null] as $label => $value)
                         @if($value)
                         <tr>
                             <td class="px-4 py-2.5 font-semibold bg-secondary-50/50 w-1/3">{{ $label }}</td>

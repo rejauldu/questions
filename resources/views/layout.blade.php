@@ -92,6 +92,20 @@
     {{-- ============================= --}}
     @yield('seo')
 
+    {{-- CSRF Token for JavaScript --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- Global Config for External JS --}}
+    <script>
+        window.AUTH_STATUS_URL = "{{ url('/auth/status') }}";
+        window.LOGIN_URL = "{{ url('/login') }}";
+        window.SUBJECTS_API_URL = "{{ route('api.posts.subjects-by-institution') }}";
+        
+        // Pass current request data for dropdown persistence
+        window.CURRENT_INSTITUTION_ID = "{{ request('institution_id') }}";
+        window.CURRENT_SUBJECT = "{{ request('subject_id') }}";
+    </script>
+
     {{-- CSS + JS --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'], 'build/front')
 </head>

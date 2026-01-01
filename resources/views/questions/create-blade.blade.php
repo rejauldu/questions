@@ -21,7 +21,7 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-4 bg-secondary-50 rounded-xl border border-secondary-200">
                 <div>
                     <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Institution</label>
-                    <select name="institution_id" id="institution_id" onchange="loadSubjects(this.value)" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
+                    <select name="institution_id" id="institution_id" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
                         <option value="">Select</option>
                         @foreach($institutions as $i)
                             <option value="{{ $i->id }}" {{ request('institution_id') == $i->id ? 'selected' : '' }}>{{ $i->name }}</option>
@@ -215,37 +215,6 @@
         }
     }
 
-    async function loadSubjects(id, selectedId = null) {
-        const subjectSelect = document.getElementById('subject_id');
-        if (!id) {
-            subjectSelect.innerHTML = '<option value="">Select Institution</option>';
-            return;
-        }
-        subjectSelect.innerHTML = '<option value="">Loading...</option>';
-        
-        try {
-            const res = await axios({
-                method: 'get',
-                url: "{{ route('api.posts.subjects-by-institution') }}",
-                params: { institution_id: id },
-                headers: { 'Accept': 'application/json' }
-            });
-
-            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
-            const data = Array.isArray(res.data) ? res.data : [res.data];
-            
-            data.forEach(s => {
-                if(s && s.id) {
-                    const isSelected = (selectedId == s.id) ? 'selected' : '';
-                    subjectSelect.innerHTML += `<option value="${s.id}" ${isSelected}>${s.name}</option>`;
-                }
-            });
-        } catch (e) { 
-            console.error("Failed to load subjects:", e);
-            subjectSelect.innerHTML = '<option value="">Error Loading</option>';
-        }
-    }
-
     async function handleInlineUpload(input) {
         const file = input.files[0];
         if (!file) return;
@@ -262,5 +231,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         toggleCategory(document.getElementById('category_select').value);
     });
+</script>
+
+<script>
+    const SUBJECTS_API_URL = "{{ route('api.posts.subjects-by-institution') }}";
+    const CURRENT_SUBJECT = @json($currentParams['subject_id'] ?? '');
+    const CURRENT_INSTITUTION_ID = @json($currentParams['institution_id'] ?? '');
 </script>
 @endpush

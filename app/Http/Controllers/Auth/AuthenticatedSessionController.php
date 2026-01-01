@@ -7,21 +7,17 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
+     * Updated to return a Blade View instead of Inertia.
      */
-    public function create(): Response
+    public function create(): View
     {
-        return Inertia::render('Auth/Login', [
-            'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
-        ])->rootView('auth');
+        return view('auth.login');
     }
 
     /**
@@ -29,11 +25,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // The logic for checking email vs phone should be inside $request->authenticate()
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('chatbot', absolute: false));
+        // Redirect to chatbot as requested
+        return redirect()->intended(route('profile.show', absolute: false));
     }
 
     /**
