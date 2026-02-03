@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ViewedPost extends Model
 {
@@ -14,4 +15,9 @@ class ViewedPost extends Model
     protected $casts = [
         'viewed_at' => 'datetime',
     ];
+    
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class, 'post_id');
+    }
 }

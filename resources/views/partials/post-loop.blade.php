@@ -24,6 +24,15 @@
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-primary-50 text-primary-700 border border-primary-100">
                                 {{ $q_meta = question_meta_text($post) }}
                             </span>
+                            {{-- New Category Badge --}}
+                            @if($post->category)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] sm:text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">
+                                    <svg class="w-2.5 h-2.5 mr-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                                    </svg>
+                                    {{ ($post->institution_id == 4 && $post->category == 'MCQ') ? 'Preli' : $post->category }}
+                                </span>
+                            @endif
                         </div>
 
                         <div class="flex items-center gap-3">

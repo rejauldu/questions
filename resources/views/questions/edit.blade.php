@@ -1,0 +1,231 @@
+@extends('layout')
+
+@section('content')
+<div class="min-h-screen bg-secondary-100 py-6">
+    <div class="max-w-7xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 md:p-8">
+
+        {{-- Page Header --}}
+        <div class="mb-6 border-b pb-4 text-center">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-700">
+                Edit Question #{{ $question->id }}
+            </h1>
+            {{-- Display current context so you know what you're editing --}}
+            <div class="flex flex-wrap justify-center gap-2 mt-2">
+                <span class="px-3 py-1 bg-secondary-100 text-secondary-700 text-xs font-bold rounded-full border border-secondary-200 uppercase">
+                    {{ institution($question->institution->name) }}
+                </span>
+                <span class="px-3 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full border border-primary-200 uppercase">
+                    {{ $question->subject->name ?? 'No Subject' }}
+                </span>
+            </div>
+        </div>
+
+        {{-- Form Start --}}
+        <form action="{{ route('questions.update', $question->id) }}" 
+              method="POST" 
+              enctype="multipart/form-data" 
+              onsubmit="return validateForm()" 
+              class="space-y-8">
+            @csrf
+            @method('PUT')
+
+            {{-- 1. Remaining Metadata Grid --}}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-secondary-50 rounded-xl border border-secondary-200">
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Board</label>
+                    <select name="board_id" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
+                        <option value="">Select Board</option>
+                        @foreach($boards as $b)
+                            <option value="{{ $b->id }}" {{ $question->board_id == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Year</label>
+                    <select name="year" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
+                        <option value="">Year</option>
+                        @foreach($years as $y)
+                            <option value="{{ $y }}" {{ $question->year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Chapter</label>
+                    <input name="chapter" value="{{ old('chapter', $question->chapter) }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500" placeholder="e.g. 01" />
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Topic Name</label>
+                    <input name="topic_name" value="{{ old('topic_name', $question->topic_name) }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500" placeholder="e.g. Thermodynamics" />
+                </div>
+            </div>
+
+            {{-- 2. Category Selection --}}
+            <div class="p-4 bg-primary-50 rounded-xl border border-primary-100">
+                <label class="text-[11px] font-black text-primary-700 uppercase tracking-widest">Question Type / Category</label>
+                <select name="category" id="category_select" onchange="toggleCategory(this.value)" class="w-full md:w-1/4 mt-1 border-primary-300 rounded-lg text-base font-bold text-primary-800 focus:ring-primary-500 shadow-sm">
+                    <option value="MCQ" {{ $question->category == 'MCQ' ? 'selected' : '' }}>MCQ (Multiple Choice)</option>
+                    <option value="CQ" {{ $question->category == 'CQ' ? 'selected' : '' }}>CQ (Creative / Written)</option>
+                    <option value="Writing" {{ $question->category == 'Writing' ? 'selected' : '' }}>Writing</option>
+                </select>
+            </div>
+
+            {{-- 3. Article (Question Stem) --}}
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <label class="font-bold text-primary-800 text-lg">Article (উদ্দীপক / প্রশ্ন)</label>
+                    <div class="flex gap-2">
+                        <input type="file" id="inlineImageInput" class="hidden" accept="image/*" onchange="handleInlineUpload(this)" />
+                        <button type="button" onclick="document.getElementById('inlineImageInput').click()" class="text-[11px] uppercase font-black bg-white text-primary-600 px-3 py-1.5 rounded-lg border border-primary-200 hover:bg-primary-50 transition shadow-sm">
+                            + Add Inline Image
+                        </button>
+                    </div>
+                </div>
+                <textarea name="article" id="article"
+                    class="w-full border-secondary-300 rounded-xl shadow-inner min-h-[180px] text-base focus:ring-2 focus:ring-primary-500" 
+                    placeholder="Write question details here...">{{ old('article', $question->article) }}</textarea>
+            </div>
+
+            {{-- Question Image Section --}}
+            <div class="space-y-3">
+                <label class="font-bold text-primary-800 text-lg flex items-center gap-2">
+                    Question Images (প্রশ্নের ছবি / বিকল্প)
+                </label>
+                <div class="relative border-2 border-dashed border-secondary-300 rounded-xl p-8 bg-secondary-50 hover:bg-white transition cursor-pointer group">
+                    <input type="file" name="images[]" id="images" multiple accept="image/*" 
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                        onchange="previewImages(this)">
+                    
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-secondary-400 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="mt-2 text-sm text-secondary-600 font-bold uppercase tracking-wide">Upload new images to replace existing ones</p>
+                    </div>
+                </div>
+                
+                <div id="image_preview_container" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mt-4">
+                    @if($question->images)
+                        @foreach(json_decode($question->images) as $img)
+                            <div class="relative aspect-square rounded-lg border border-secondary-300 overflow-hidden shadow-sm bg-white">
+                                <img src="{{ asset('storage/'.$img) }}" class="w-full h-full object-cover">
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+
+            {{-- 4. MCQ Options Section --}}
+            <div id="mcq_section" class="grid grid-cols-2 gap-6 p-6 bg-secondary-50 rounded-2xl border-2 border-dashed border-secondary-200 mt-4">
+                @foreach(['a', 'b', 'c', 'd'] as $opt)
+                    <div class="group">
+                        <label class="text-[10px] font-bold text-secondary-400 uppercase ml-1">Option {{ strtoupper($opt) }}</label>
+                        <div class="flex items-center gap-3">
+                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-secondary-300 flex items-center justify-center font-bold text-secondary-500 group-focus-within:bg-primary-600 group-focus-within:text-white transition shadow-sm">
+                                {{ strtoupper($opt) }}
+                            </span>
+                            <input name="{{ $opt }}" value="{{ old($opt, $question->$opt) }}"
+                                class="w-full border-secondary-300 rounded-lg text-sm px-4 py-2.5 shadow-sm focus:ring-primary-500" 
+                                placeholder="Type option here..." />
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- 5. Solutions & Explanations --}}
+            <div class="space-y-6">
+                <div id="solution_container" class="space-y-4">
+                    <div class="space-y-3">
+                        <label class="font-bold text-primary-800">Explanation (ব্যাখ্যা)</label>
+                        <textarea name="explanation" 
+                            class="w-full border-secondary-300 rounded-xl text-sm min-h-[100px] focus:ring-primary-500 shadow-inner bg-gray-50" 
+                            placeholder="Why is this answer correct?">{{ old('explanation', $question->explanation) }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 6. Bottom Metadata & Submit --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-8 border-t border-secondary-100">
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Target Class</label>
+                    <select name="class" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
+                        <option value="">Select Class</option>
+                        @foreach($classes as $c)
+                            <option value="{{ $c['value'] }}" {{ $question->class == $c['value'] ? 'selected' : '' }}>{{ $c['text'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="ans_field_container">
+                    <label id="ans_label" class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Correct Option (e.g. A)</label>
+                    <input name="ans" id="ans_input" value="{{ old('ans', $question->ans) }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm py-2 px-4 font-bold text-primary-700 focus:ring-primary-500" placeholder="A" />
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-green-600 text-white font-extrabold rounded-xl hover:bg-green-700 shadow-lg transform transition active:scale-95 uppercase tracking-wider">
+                    Update Question
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    // Validation: Simple check now that complex selects are gone
+    function validateForm() {
+        const article = document.getElementById('article').value;
+        if (!article.trim()) {
+            alert("Article cannot be empty.");
+            return false;
+        }
+        return true;
+    }
+
+    function toggleCategory(val) {
+        const mcqSection = document.getElementById('mcq_section');
+        const ansLabel = document.getElementById('ans_label');
+
+        if (val === 'MCQ' || val === 'CQ') {
+            mcqSection.classList.remove('hidden');
+            ansLabel.innerText = "Correct Option (e.g. A)";
+        } else {
+            mcqSection.classList.add('hidden');
+            ansLabel.innerText = "Answer / Mark (e.g. 10)";
+        }
+    }
+
+    function previewImages(input) {
+        const container = document.getElementById('image_preview_container');
+        container.innerHTML = ''; 
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative aspect-square rounded-lg border border-secondary-300 overflow-hidden shadow-sm bg-white';
+                    div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    container.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    async function handleInlineUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+            const res = await axios.post("{{ route('api.image.upload') }}", formData);
+            const imgTag = `\n<img src="${res.data.url}" alt="diagram" class="max-w-full h-auto my-2" />\n`;
+            document.getElementById('article').value += imgTag;
+        } catch (e) { alert("Upload failed."); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleCategory(document.getElementById('category_select').value);
+    });
+</script>
+@endpush

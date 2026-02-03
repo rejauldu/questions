@@ -64,14 +64,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.MathJax) {
-        MathJax.typesetPromise();
-    }
-});
-</script>
-@endpush

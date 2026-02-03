@@ -11,6 +11,42 @@ export default {
         "./resources/js/**/*.vue",
     ],
 
+    safelist: [
+        'col-span-1',
+        'col-span-2',
+        'col-span-3',
+        'col-span-4',
+
+        // built-in list styles
+        'list-none',
+        'list-disc',
+        'list-decimal',
+
+        // arbitrary list-style-type values
+        'list-[circle]',
+        'list-[lower-roman]',
+        'list-[upper-roman]',
+        'list-[lower-alpha]',
+        'list-[upper-alpha]',
+
+        // position (commonly needed)
+        'list-inside',
+        'list-outside',
+        // common spacing helpers for lists
+        'pl-1',
+        'pl-2',
+        'pl-3',
+        'pl-4',
+        'pl-5',
+        'pl-6',
+        'ml-1',
+        'ml-2',
+        'ml-3',
+        'ml-4',
+        'ml-5',
+        'ml-6',
+    ],
+
     theme: {
         extend: {
             // --- Custom Colors ---

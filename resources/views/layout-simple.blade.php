@@ -38,7 +38,7 @@
     </style>
 </head>
 
-<body class="bg-[#FDFCF8] text-slate-900 overflow-x-hidden antialiased">
+<body class="bg-white text-slate-900 overflow-x-hidden antialiased">
 
     {{-- The Reading Container --}}
     <main id="reading-container">

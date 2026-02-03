@@ -113,7 +113,7 @@
                     {{-- Year --}}
                     <div class="col-span-1">
                         <label for="year" class="block text-xs sm:text-sm font-medium text-secondary-700 mb-1">
-                            Year
+                            Year / BCS
                         </label>
                         <select id="year" name="year"
                             class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 js-filter-trigger text-xs sm:text-sm">
@@ -127,20 +127,14 @@
                         </select>
                     </div>
 
-                    {{-- Class --}}
+                    {{-- Category --}}
                     <div class="col-span-1">
-                        <label for="class" class="block text-xs sm:text-sm font-medium text-secondary-700 mb-1">
-                            Class
-                        </label>
-                        <select id="class" name="class"
-                            class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
-                            <option value="">All Classes</option>
-                            @foreach($initialFilters['classes'] ?? [] as $class)
-                                <option value="{{ $class }}"
-                                    {{ ($currentParams['class'] ?? '') == $class ? 'selected' : '' }}>
-                                    {{ $class }}
-                                </option>
-                            @endforeach
+                        <label for="category" class="block text-xs sm:text-sm font-medium text-secondary-700 mb-1">Category</label>
+                        <select id="category" name="category" class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
+                            <option value="">All Category</option>
+                            <option value="CQ" {{ ($currentParams['category'] ?? '') == 'CQ' ? 'selected' : '' }}>CQ</option>
+                            <option value="MCQ" {{ ($currentParams['category'] ?? '') == 'MCQ' ? 'selected' : '' }}>MCQ</option>
+                            <option value="Writing" {{ ($currentParams['category'] ?? '') == 'Writing' ? 'selected' : '' }}>Writing</option>
                         </select>
                     </div>
 

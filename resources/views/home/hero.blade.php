@@ -6,16 +6,19 @@
 
     <div class="relative max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
 
-        {{-- Compact Tagline --}}
-        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary-100 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 sm:mb-6">
-            <span class="w-1.5 h-1.5 bg-warning-400 rounded-full animate-pulse"></span>
-            Past Questions & AI Guidance
-        </div>
 
-        {{-- Main Heading - Reduced sizes for mobile --}}
-        <h1 class="text-2xl sm:text-5xl font-extrabold text-white leading-tight mb-6 max-w-3xl px-2">
-            Master <span class="text-warning-400">Past Questions</span> for SSC, HSC & BCS
-        </h1>
+        {{-- Personalized Container --}}
+        <div id="personalized-hero-content" class="w-full flex flex-col items-center transition-all duration-700 ease-in-out">
+            {{-- DEFAULT CONTENT (Shown while loading or if no intent found) --}}
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary-100 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 sm:mb-6">
+                <span class="w-1.5 h-1.5 bg-warning-400 rounded-full animate-pulse"></span>
+                Past Questions & AI Guidance
+            </div>
+
+            <h1 class="text-2xl sm:text-5xl font-extrabold text-white leading-tight mb-6 max-w-3xl px-2">
+                Master <span class="text-warning-400">Past Questions</span> for SSC, HSC & BCS
+            </h1>
+        </div>
 
         {{-- Search Container - Slimmer padding --}}
         <div class="w-full max-w-xl bg-white/5 backdrop-blur-md p-1.5 rounded-xl border border-white/10 mb-8">

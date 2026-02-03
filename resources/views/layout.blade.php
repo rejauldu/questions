@@ -119,8 +119,32 @@
     </main>
 
     @include('components.footer')
-
+    
     @stack('scripts')
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                processEscapes: true
+            },
+            options: {
+                enableMenu: false // ঐচ্ছিক: ডান ক্লিক মেনু বন্ধ রাখতে
+            },
+            startup: {
+                typeset: false // শুরুতে অটোমেটিক টাইপসেট হবে না
+            }
+        };
+    </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+        // স্ক্রিপ্ট লোড হওয়ার পর পেজ রেন্ডার করার জন্য
+        window.addEventListener('load', () => {
+            if (window.MathJax && window.MathJax.typeset) {
+            window.MathJax.typeset();
+            }
+        });
+    </script>
 </body>
 </html>

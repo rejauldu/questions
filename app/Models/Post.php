@@ -25,6 +25,7 @@ class Post extends Model
         'answer_id',
         'subject_id',
         'chapter',
+        'topic_name',
         'category',
         'board_id',
         'year',
@@ -34,7 +35,8 @@ class Post extends Model
         'image2',
         'image3',
         'image4',
-        'user_id'
+        'user_id',
+        'is_verified'
     ];
 
     protected $casts = [

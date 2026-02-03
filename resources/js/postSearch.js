@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
         mbWrapper: document.getElementById('auth-wrapper-mobile'),
         profileItems: document.querySelectorAll('#nav-profile-item, #mobile-profile-item'),
         dashboardItems: document.querySelectorAll('#nav-dashboard-item, #mobile-dashboard-item'),
-        logoutForm: document.getElementById('logout-form-dynamic')
+        logoutForm: document.getElementById('logout-form-dynamic'),
+        adminAction: document.getElementById('admin-actions')
     };
 
     // --- 2. Dependent Dropdown Logic (Untouched) ---
@@ -74,6 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Handle Profile/Dashboard Visibility
             el.profileItems.forEach(i => i.classList.toggle('hidden', !isAuth));
             el.dashboardItems.forEach(i => i.classList.toggle('hidden', !isAdmin));
+
+            // 3. Admin Action is for Admins only (Fixing the toggle logic)
+            if (el.adminAction) {
+                el.adminAction.classList.toggle('hidden', !isAdmin);
+            }
 
             // ONLY update the wrapper if the user IS authenticated
             // If not authenticated, we leave the hardcoded Login button alone

@@ -56,7 +56,7 @@
                 <a href="{{ route('questions.create') }}" class="block p-3 rounded-xl text-indigo-50 hover:bg-white/10">Dashboard</a>
             </li>
             <li id="mobile-profile-item" class="hidden">
-                <a href="{{ url('/profile') }}" class="block p-3 rounded-xl text-indigo-50 hover:bg-white/10">Profile</a>
+                <a href="{{ route('profile.show') }}" class="block p-3 rounded-xl text-indigo-50 hover:bg-white/10">Profile</a>
             </li>
             <li id="auth-wrapper-mobile" class="pt-2 border-t border-white/5">
                 {{-- Default State: Show Login --}}

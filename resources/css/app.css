@@ -15,3 +15,29 @@
   opacity: 1;
   transform: translateY(0);
 }
+@layer base {
+  table.table {
+    @apply w-full border border-gray-400 border-separate border-spacing-0;
+  }
+
+  table.table thead {
+    @apply bg-gray-100;
+  }
+
+  table.table th {
+    @apply border border-gray-400 px-3 py-2 text-left font-semibold;
+  }
+
+  table.table td {
+    @apply border border-gray-400 px-3 py-2;
+  }
+
+  table.table tbody tr:nth-child(even) {
+    @apply bg-gray-50;
+  }
+}
+
+/* Traditional Bengali question styling */
+.bn-number::after {
+    content: "। ";
+}

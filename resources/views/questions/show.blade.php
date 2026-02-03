@@ -7,30 +7,13 @@
     /* =====================================================
      * 1. SEO META DATA
      * ===================================================== */
-    $seoParts = [];
 
-    if (!empty($post->institution->name)) {
-        $seoParts[] = $institution;
-    }
-    if (!empty($post->subject->name)) {
-        $seoParts[] = $subject;
-    }
-    if (!empty($post->class)) {
-        $seoParts[] = ordinal_suffix($post->class) . ' year';
-    }
-    if (!empty($post->board->name)) {
-        $seoParts[] = $post->board->name . ' Board';
-    }
-    if (!empty($post->year)) {
-        $seoParts[] = $post->year;
-    }
-
-    $h1 = implode(' ', $seoParts);
+    $h1 = question_meta_text($post);
     $title = Str::limit($h1, 36, '...') . ' Questions | ExamDao';
 
     $questionText = trim(strip_tags($post->article));
     $description = Str::limit(
-        $questionText . ' | ' . implode(', ', $seoParts),
+        $questionText . ' | ' . question_meta_text($post, ", "),
         155,
         '...'
     );
@@ -124,8 +107,8 @@
                         'url' => 'https://examdao.com',
                     ],
                     'about' => array_values(array_filter([
-                        $institution, // HSC
-                        $subject,          // Bangla 2nd Paper
+                        $institution, 
+                        $subject,
                         $post->board ? $post->board->name . ' Board' : null,
                         $post->year ?? null,
                     ])),
@@ -153,15 +136,33 @@
 @endsection
 
 @section('content')
-<div class="min-h-screen bg-secondary-100">
+<div class="min-h-screen bg-secondary-100" data-post-id="{{ $post->id }}">
     <div class="max-w-4xl mx-auto py-2 sm:py-4 px-2 sm:px-4">
 
-        <div class="bg-white rounded-xl shadow-xl p-5 md:p-6 mb-8 border-t-4 border-primary-600">
+        {{-- ADMIN EDIT ACTION --}}
+        <div id="admin-actions" class="hidden mb-4 flex justify-end">
+            <a href="{{ route('questions.edit', $post->id) }}" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                EDIT QUESTION
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-2 md:p-6 mb-8 border-t-4 border-primary-600">
             <div class="flex justify-between items-start mb-4 border-b pb-3">
                 <h1 class="text-sm font-bold text-secondary-900 leading-tight pr-4">
                     <span class="text-warning-700 p-1 px-2 rounded-md">
                         {{ $h1 }}
                     </span>
+                    @if($post->category)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] sm:text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">
+                            <svg class="w-2.5 h-2.5 mr-1 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                            </svg>
+                            {{ ($post->institution_id == 4 && $post->category == 'MCQ') ? 'Preli' : $post->category }}
+                        </span>
+                    @endif
                 </h1>
                 
                 @php
@@ -176,7 +177,7 @@
             </div>
             
             <p class="text-base text-secondary-800 mb-4 leading-relaxed text-justify">
-                {!! nl2br($post->article ?? "") !!}
+                {!! smart_nl2br($post->article ?? "") !!}
             </p>
 
             @if ($post->image1)
@@ -190,10 +191,10 @@
                     @endif
                 @endforeach
             @else
-                @if(!empty(trim(strip_tags($post->a))))
+                @if(isset($post->a))
                 <div class="space-y-2 text-secondary-700 text-sm">
                     @foreach(['a'=>'ক','b'=>'খ','c'=>'গ','d'=>'ঘ'] as $key => $label)
-                        @if(!empty(trim(strip_tags($post->$key))))
+                        @if(isset($post->$key))
                         <p class="p-2 rounded bg-secondary-50 border border-secondary-200">
                             <span class="font-bold text-primary-500 mr-1">{{ $label }})</span> {!! $post->$key !!}
                         </p>
@@ -223,8 +224,8 @@
                     @if ($post->explanation)
                         <div class="pt-2">
                             <h3 class="text-lg font-bold text-primary-700 mb-2">ব্যাখ্যা</h3>
-                            <div class="text-sm bg-primary-50 p-4 rounded-lg border border-primary-200">
-                                {!! nl2br($post->explanation) !!}
+                            <div class="text-sm bg-primary-50 p-2 rounded-lg border border-primary-200">
+                                {!! smart_nl2br($post->explanation) !!}
                             </div>
                         </div>
                     @endif
@@ -237,7 +238,7 @@
             <a href="{{ route('reading.mode', [
                     'institution' => slug(institution($post->institution->name)), 
                     'subject' => slug($post->subject->name), 
-                    'id' => $post->id, 
+                    'question' => $post->id, 
                     'slug' => url_slug($post->article, question_meta_text($post))
                 ]) }}" 
                class="group relative flex items-center justify-between p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl border border-slate-700 shadow-lg hover:shadow-primary-500/20 transition-all duration-300">
@@ -250,7 +251,7 @@
                     </div>
                     <div>
                         <h3 class="text-white font-bold text-sm sm:text-base leading-tight">অনুশীলন করুন</h3>
-                        <p class="text-slate-400 text-xs mt-0.5">একটানা সকল প্রশ্নের সমাধান পড়ুন</p>
+                        <p class="text-slate-400 text-xs mt-0.5">একটানা সকল প্রশ্নের সমাধান পড়ুন</p>
                     </div>
                 </div>
         
@@ -258,7 +259,6 @@
                     Start <x-icons.down-arrow class="w-4 h-4 -rotate-90" />
                 </div>
         
-                {{-- Subtle background decoration --}}
                 <div class="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white/5 to-transparent rounded-r-2xl pointer-events-none"></div>
             </a>
         </div>
@@ -268,7 +268,7 @@
             <div class="bg-secondary-50 px-4 py-2 border-b text-[10px] font-bold text-secondary-500 uppercase">Resource Details</div>
             <table class="w-full text-xs sm:text-sm text-left text-secondary-700">
                 <tbody class="divide-y">
-                    @foreach(['Exam' => $institution, 'Subject' => $subject, 'Chapter' => $post->chapter ?? null, 'Board' => $post->board->name ?? null, 'Year' => $post->year ?? null] as $label => $value)
+                    @foreach(['Exam' => $institution, 'Subject' => $subject, 'Chapter' => $post->chapter ?? null, 'Board' => $post->board->name ?? null, 'Year/No.' => $post->year ?? null] as $label => $value)
                         @if($value)
                         <tr>
                             <td class="px-4 py-2.5 font-semibold bg-secondary-50/50 w-1/3">{{ $label }}</td>

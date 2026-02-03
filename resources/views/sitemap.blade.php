@@ -1,86 +1,74 @@
-@php $xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>'; @endphp
+@php 
+    $xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>'; 
+@endphp
 {!! $xmlHeader !!}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
-    {{-- 1. Home --}}
-    <url>
-        <loc>{{ url('/') }}</loc>
-        <priority>1.0</priority>
-        <changefreq>daily</changefreq>
-    </url>
+    {{-- 1. Fixed Public Pages --}}
+    <url><loc>{{ route('home') }}</loc><priority>1.0</priority></url>
+    <url><loc>{{ route('questions.list') }}</loc><priority>0.8</priority></url>
+    <url><loc>{{ route('chatbot') }}</loc><priority>0.8</priority></url>
+    <url><loc>{{ route('about') }}</loc><priority>0.5</priority></url>
+    <url><loc>{{ route('contact') }}</loc><priority>0.5</priority></url>
 
-    {{-- 2. Static Pages (Trust Signals) --}}
-    <url>
-        <loc>{{ url('/about') }}</loc>
-        <priority>0.5</priority>
-    </url>
-    <url>
-        <loc>{{ url('/contact') }}</loc>
-        <priority>0.5</priority>
-    </url>
-    <url>
-        <loc>{{ url('/chatbot') }}</loc>
-        <priority>0.6</priority>
-    </url>
-
-    {{-- 3. Hierarchical Routes --}}
+    {{-- 2. Hierarchical Exam Routes --}}
     @foreach ($institutions as $institution)
-        {{-- Level 1: Institution --}}
+        {{-- Level 1: Institution Root --}}
         <url>
-            <loc>{{ route('exam.show', $institution->slug) }}</loc>
-            <priority>0.8</priority>
-            <changefreq>weekly</changefreq>
+            <loc>{{ url('/exam/' . $institution->slug) }}</loc>
+            <priority>0.9</priority>
         </url>
 
-        @foreach ($subjects as $subject)
-            {{-- Level 2: Institution + Subject --}}
-            <url>
-                <loc>{{ route('exam.show', [$institution->slug, $subject->slug]) }}</loc>
-                <priority>0.7</priority>
-                <changefreq>weekly</changefreq>
-            </url>
+        {{-- Level 2: Filtered Subjects --}}
+        @php
+            $filteredSubjects = $subjects->where('institution_id', $institution->id);
+        @endphp
 
-            {{-- Level 3: Institution + Subject + Year (Hierarchy) --}}
-            {{-- This dynamically finds years that actually have questions for this pair --}}
+        @foreach ($filteredSubjects as $subject)
             @php
-                $years = $posts->where('institution_id', $institution->id)
-                               ->where('subject_id', $subject->id)
-                               ->pluck('year')
-                               ->unique();
+                $subYears = $posts->where('institution_id', $institution->id)
+                                  ->where('subject_id', $subject->id)
+                                  ->pluck('year')
+                                  ->unique()
+                                  ->filter();
             @endphp
-            @foreach ($years as $year)
+
+            @if($subYears->isNotEmpty())
+                {{-- Subject Index --}}
                 <url>
-                    <loc>{{ route('exam.show', [$institution->slug, $subject->slug, $year]) }}</loc>
-                    <priority>0.6</priority>
+                    <loc>{{ url('/exam/' . $institution->slug . '/' . $subject->slug) }}</loc>
+                    <priority>0.7</priority>
                 </url>
-            @endforeach
+
+                {{-- Subject + Year --}}
+                @foreach ($subYears as $year)
+                    <url>
+                        <loc>{{ url('/exam/' . $institution->slug . '/' . $subject->slug . '/' . $year) }}</loc>
+                        <priority>0.6</priority>
+                    </url>
+                @endforeach
+            @endif
         @endforeach
     @endforeach
 
-    {{-- 4. Individual Questions (The "Long Tail" SEO) --}}
+    {{-- 3. Individual Questions (Bengali Clean Up) --}}
     @foreach ($posts as $post)
         @php
             $q_meta = question_meta_text($post);
             $slug = url_slug($post->article, $q_meta);
+            
+            // Generate the full URL
+            $fullUrl = route('questions.show', ['question' => $post->id, 'slug' => $slug]);
+            
+            // urldecode makes the Bengali characters readable in the XML file 
+            // instead of the %E0 symbols, which is better for some validators.
+            $cleanUrl = urldecode($fullUrl);
         @endphp
         <url>
-            <loc>{{ url("/questions/{$post->id}/{$slug}") }}</loc>
+            <loc>{{ $cleanUrl }}</loc>
             <priority>0.9</priority>
             <lastmod>{{ $post->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         </url>
     @endforeach
-
-    {{-- 5. Paginated Main Feed --}}
-    @php
-        $totalQuestions = $posts->count();
-        $perPage = 50;
-        $pages = ceil($totalQuestions / $perPage);
-    @endphp
-    @for ($i = 1; $i <= $pages; $i++)
-        <url>
-            <loc>{{ url("/questions?page={$i}") }}</loc>
-            <priority>0.4</priority>
-        </url>
-    @endfor
 
 </urlset>

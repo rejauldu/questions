@@ -9,7 +9,7 @@
             Create New Question
         </h1>
 
-        {{-- Form Start - Added onsubmit validation --}}
+        {{-- Form Start --}}
         <form action="{{ route('questions.store') }}" 
               method="POST" 
               enctype="multipart/form-data" 
@@ -52,9 +52,15 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-span-2">
+                {{-- Updated Chapter Field --}}
+                <div>
                     <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Chapter</label>
-                    <input name="chapter" value="{{ request('chapter') }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500" placeholder="e.g. Chapter 01" />
+                    <input name="chapter" value="{{ request('chapter') }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500" placeholder="e.g. 01" />
+                </div>
+                {{-- NEW: Topic Name Field --}}
+                <div>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Topic Name</label>
+                    <input name="topic_name" value="{{ request('topic_name') }}" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500" placeholder="e.g. Thermodynamics" />
                 </div>
             </div>
 
@@ -84,7 +90,7 @@
                     placeholder="Write question details here...">{{ request('article') }}</textarea>
             </div>
 
-            {{-- NEW: Full Width Question Image Section --}}
+            {{-- Question Image Section --}}
             <div class="space-y-3">
                 <label class="font-bold text-primary-800 text-lg flex items-center gap-2">
                     Question Images (প্রশ্নের ছবি / বিকল্প)
@@ -164,21 +170,15 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    /**
-     * NEW: Form Validation Function
-     */
     function validateForm() {
         const institutionSelect = document.getElementById('institution_id');
-        
         if (institutionSelect.value === "" || institutionSelect.value === null) {
             alert("Please select an Institution before saving.");
             institutionSelect.focus();
-            // Scroll to the top where the metadata grid is
             institutionSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return false; // Prevents form submission
+            return false;
         }
-        
-        return true; // Allows form submission
+        return true;
     }
 
     function toggleCategory(val) {
@@ -186,7 +186,7 @@
         const ansLabel = document.getElementById('ans_label');
         const ansInput = document.getElementById('ans_input');
 
-        if (val === 'MCQ') {
+        if (val === 'MCQ' || val === 'CQ') {
             mcqSection.classList.remove('hidden');
             ansLabel.innerText = "Correct Option (e.g. A)";
             ansInput.placeholder = "A";
@@ -200,7 +200,6 @@
     function previewImages(input) {
         const container = document.getElementById('image_preview_container');
         container.innerHTML = ''; 
-
         if (input.files) {
             Array.from(input.files).forEach(file => {
                 const reader = new FileReader();

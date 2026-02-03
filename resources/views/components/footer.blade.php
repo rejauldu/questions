@@ -44,7 +44,7 @@
                 <ul class="space-y-2 text-sm">
                     <li><a href="{{ route('exam.show', 'ssc') }}" class="text-gray-300 hover:text-yellow-400 transition">SSC Preparation</a></li>
                     <li><a href="{{ route('exam.show', 'hsc') }}" class="text-gray-300 hover:text-yellow-400 transition">HSC Question Bank</a></li>
-                    <li><a href="{{ route('exam.show', 'admission') }}" class="text-gray-300 hover:text-yellow-400 transition">Admission Guidance</a></li>
+                    <li><a href="{{ route('exam.show', 'nu') }}" class="text-gray-300 hover:text-yellow-400 transition">National Univ. Guide</a></li>
                     <li><a href="{{ route('exam.show', 'bcs') }}" class="text-gray-300 hover:text-yellow-400 transition">BCS Study Materials</a></li>
                 </ul>
             </div>

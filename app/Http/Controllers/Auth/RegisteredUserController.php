@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ViewedPost; // এডেড
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,6 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            // Added basic regex for phone validation to prevent non-numeric strings
             'phone' => ['required', 'string', 'regex:/^([0-9\s\-\+\(\)]*)$/', 'min:10', 'max:15', 'unique:users,phone'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -47,7 +47,32 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // Redirect to chatbot as per your app flow
+        // --- গেস্ট ডাটা মার্জ লজিক শুরু ---
+        $uuid = $request->cookie('examdao_uuid');
+
+        if ($uuid) {
+            // গেস্ট হিসেবে পড়া পোস্টগুলো খুঁজে বের করা
+            $guestViews = ViewedPost::where('visitor_uuid', $uuid)->get();
+
+            foreach ($guestViews as $view) {
+                // যেহেতু এটি নতুন রেজিস্ট্রেশন, ডুপ্লিকেট থাকার সম্ভাবনা নেই, 
+                // তবুও সেফটি চেক রাখা ভালো
+                $exists = ViewedPost::where('user_id', $user->id)
+                    ->where('post_id', $view->post_id)
+                    ->exists();
+
+                if (!$exists) {
+                    $view->update([
+                        'user_id' => $user->id,
+                        'visitor_uuid' => null
+                    ]);
+                } else {
+                    $view->delete();
+                }
+            }
+        }
+        // --- গেস্ট ডাটা মার্জ লজিক শেষ ---
+
         return redirect(route('profile.show', absolute: false));
     }
 }

@@ -54,36 +54,50 @@ if (!function_exists('question_meta_text')) {
      * @param  object  $post
      * @return string
      */
-    function question_meta_text($post): string
+    function question_meta_text($post, $implode = " - "): string
     {
         $parts = [];
-
-        // Institution (take first part if there's a slash)
+        
+        // Check if it's a BCS category
+        $categoryName = $post->institution->name ?? '';
+        $isBCS = stripos($categoryName, 'BCS') !== false;
+    
+        if ($isBCS) {
+            // Format: "38th BCS English"
+            $bcsPart = '';
+            if (!empty($post->year)) {
+                $bcsPart = ordinal_suffix($post->year) . ' BCS';
+            } else {
+                $bcsPart = 'BCS';
+            }
+    
+            $subjectPart = $post->subject->name ?? '';
+            
+            return trim("$bcsPart $subjectPart");
+        }
+    
+        // Original logic for HSC/SSC
         if (!empty($post->institution->name)) {
             $parts[] = explode('/', $post->institution->name)[0];
         }
-
-        // Subject
+    
         if (!empty($post->subject->name)) {
             $parts[] = $post->subject->name;
         }
-
-        // Class with ordinal suffix
+    
         if (!empty($post->class)) {
             $parts[] = ordinal_suffix($post->class) . ' year';
         }
-
-        // Board
+    
         if (!empty($post->board->name)) {
             $parts[] = $post->board->name . " Board";
         }
-
-        // Year
+    
         if (!empty($post->year)) {
             $parts[] = $post->year;
         }
-
-        return implode(' - ', $parts);
+    
+        return implode($implode, $parts);
     }
 }
 if (!function_exists('question_image_basename')) {
@@ -175,12 +189,12 @@ if (!function_exists('subject')) {
 
         $subject = trim($subject);
 
-        // ICT should stay as-is
-        if (strtoupper($subject) === 'ICT') {
-            return 'ICT';
+        // Append ' paper' only if the string ends with 1st or 2nd (case-insensitive)
+        if (preg_match('/(1st|2nd)$/i', $subject)) {
+            return $subject . ' paper';
         }
 
-        return $subject . ' paper';
+        return $subject;
     }
 }
 if (!function_exists('slug')) {
@@ -194,5 +208,73 @@ if (!function_exists('slug')) {
     {
         // Use Laravel Str helper for slug
         return \Illuminate\Support\Str::slug($name);
+    }
+}
+
+if (!function_exists('clean_html_between_tags')) {
+    /**
+     * Convert a string into a URL-friendly slug.
+     *
+     * @param string $name
+     * @return string
+     */
+    function clean_html_between_tags(string $html): string
+    {
+        return preg_replace('/>\s+</', '><', $html);
+    }
+}
+
+function smart_nl2br(string $html): string
+{
+    $parts = preg_split('/(<pre\b[^>]*>.*?<\/pre>)/si', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    foreach ($parts as $i => $part) {
+        if (!preg_match('/^<pre\b/i', $part)) {
+            $parts[$i] = nl2br($part);
+        }
+    }
+
+    return implode('', $parts);
+}
+if (!function_exists('bnNum')) {
+    /**
+     * Convert English numbers to Bengali numbers.
+     *
+     * @param  mixed  $number
+     * @return string
+     */
+    function bnNum($number): string
+    {
+        $en = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+        return str_replace($en, $bn, (string)$number);
+    }
+}
+if (!function_exists('bnBoard')) {
+    /**
+     * Translate English Board names to Bengali.
+     *
+     * @param  string|null  $name
+     * @return string
+     */
+    function bnBoard($name): string
+    {
+        $boards = [
+            'Dhaka'      => 'ঢাকা',
+            'Chittagong' => 'চট্টগ্রাম',
+            'Comilla'    => 'কুমিল্লা',
+            'Rajshahi'   => 'রাজশাহী',
+            'Jessore'    => 'যশোর',
+            'Barishal'   => 'বরিশাল',
+            'Sylhet'     => 'সিলেট',
+            'Dinajpur'   => 'দিনাজপুর',
+            'Mymensingh' => 'ময়মনসিংহ',
+            'Madrasah'   => 'মাদ্রাসা',
+            'Technical'  => 'কারিগরি',
+            'All'        => 'সকল'
+        ];
+
+        return $boards[$name] ?? ($name ?? 'সকল');
     }
 }
