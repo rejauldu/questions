@@ -179,49 +179,59 @@ class ReadingController extends Controller
         return response()->json(['status' => 'tracked']);
     }
 
-    public function exam($institutionSlug = null, $subjectSlug = null, $category = null)
+    public function exam(Request $request, $institutionSlug = null, $subjectSlug = null, $category = null)
     {
         $query = Post::query()
-            ->whereIn('category', self::QUESTION_TYPES) // Only show academic questions
+            ->whereIn('category', self::QUESTION_TYPES)
             ->with(['institution', 'subject', 'board'])
             ->orderByDesc('year')
             ->orderByDesc('created_at');
-    
+
         if (!$institutionSlug) {
             return view('questions.institution', [
                 'institutions' => Institution::select('id', 'name', 'slug')->get(),
                 'posts' => $query->paginate(32),
             ]);
         }
-    
+
         $institution = Institution::where('slug', $institutionSlug)->firstOrFail();
         $query->where('institution_id', $institution->id);
-    
+
+        // --- CHAPTER FILTER LOGIC ---
+        // Only apply chapter filter if it's provided in the query string (?chapter=1)
+        if ($request->has('chapter') && $request->chapter !== null) {
+            $query->where('chapter', $request->chapter);
+        }
+        // ----------------------------
+
         $subjects = Subject::where('institution_id', $institution->id)
             ->orderBy('name')
             ->get();
 
         $uniqueSubjectsList = $subjects->unique(function ($subject) {
-            return trim(str_replace(['1st', '2nd', '১ম', '২য়'], '', strtolower($subject->name)));
-        })->values(); 
-    
+            $pattern = '/\s+(1st|2nd|১ম|২য়)$/iu';
+            return trim(preg_replace($pattern, '', $subject->name));
+        })->values();
+
         $displayName = '';
-    
+
         if ($subjectSlug && $subjectSlug !== 'all') {
-            $subject = Subject::where('slug', $subjectSlug)
+            // We use where('slug', 'like', ...) to match subjects like 'physics-1st' when slug is just 'physics'
+            $subject = Subject::where('slug', 'like', $subjectSlug.'%')
                 ->where('institution_id', $institution->id)
                 ->firstOrFail();
-    
+
             $displayName = $subject->name;
             $query->where('subject_id', $subject->id);
         }
-    
+
         if ($category) {
             $query->where('category', $category);
         }
-    
+
+        // .withQueryString() is crucial here to keep ?chapter=X when clicking pagination links
         $posts = $query->paginate(32)->withQueryString();
-    
+
         return view('questions.portal', [
             'institution'   => $institution,
             'posts'         => $posts,
@@ -242,39 +252,51 @@ class ReadingController extends Controller
      * Handle HSC specific year/category requests
      * institution_id = 2
      */
-    public function hsc($subject, $year = null, $category = null, $board_id = null)
+    public function hsc($subject = null, $year = null, $category = null, $board_id = null)
     {
-        // 1. Set Subject Defaults
-        $subject_id = null; // Initialize
-
-        if ($subject) {
-            $subject_id = Subject::where('institution_id', 2)
-                ->where('name', 'like', $subject . '%')
-                ->value('id');
+        // 1. If no subject at all, return the main HSC landing page
+        if (!$subject) {
+            return view('hsc.index'); // Or your 'hsc.index'
         }
 
-        // If no subject match found, pick a random one
-        if (!$subject_id) {
-            $subject_id = Subject::where('institution_id', 2)
-                ->inRandomOrder()
-                ->value('id');
+        // 2. Identify the Subject
+        $subjectData = Subject::where('institution_id', 2)
+            ->where('slug', $subject) // Using slug is better for URLs
+            ->orWhere('name', 'like', $subject . '%')
+            ->first();
+
+        if (!$subjectData) {
+            // Fallback if subject name doesn't match: return to main hsc index
+            return redirect()->route('hsc.index'); 
         }
 
-        // Default Year and Category
-        $year = $year ?: (date('Y') - 1);
-        $category = $category ?: Arr::random(['MCQ', 'CQ']);
+        $subject_id = $subjectData->id;
 
-        // 2. Determine which board to show
+        // 3. NEW LOGIC: If Subject exists but NO Year is provided
+        // This allows you to show the "HSC English Preparation" view
+        if ($subject && !$year) {
+            return view('hsc.subject', [
+                'subject' => $subjectData,
+                // You can pass stats here for your "Active Learning" feel
+                'total_questions' => Post::where('subject_id', $subject_id)->count()
+            ]);
+        }
+
+        // --- Rest of the code runs ONLY if Year is provided ---
+
+        // Default Category if year exists
+        $category = $category ?: 'MCQ';
+
+        // 4. Determine which board to show
         if (!$board_id) {
             $board_id = Post::where('institution_id', 2)
-                ->where('subject_id', $subject_id) // Match the subject
+                ->where('subject_id', $subject_id)
                 ->where('year', $year)
                 ->where('category', $category)
                 ->inRandomOrder()
                 ->value('board_id');
 
-            // Fallback: If no questions exist for that specific year/subject/board combo, 
-            // find the latest available board for this subject
+            // Fallback: Latest available board for this subject
             if (!$board_id) {
                 $board_id = Post::where('institution_id', 2)
                     ->where('subject_id', $subject_id)
@@ -283,9 +305,9 @@ class ReadingController extends Controller
             }
         }
 
-        // 3. Main Query - Added subject_id filter
+        // 5. Main Query
         $posts = Post::where('institution_id', 2)
-            ->where('subject_id', $subject_id) // <--- CRITICAL FIX
+            ->where('subject_id', $subject_id)
             ->where('year', $year)
             ->where('category', $category)
             ->where('board_id', $board_id)
@@ -293,7 +315,7 @@ class ReadingController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        // 4. Logic for "Next Set" (Stick to the same subject, different board/year)
+        // 6. Logic for "Next Set"
         $nextSet = Post::where('institution_id', 2)
             ->where('subject_id', $subject_id)
             ->where(function($q) use ($year, $board_id) {
@@ -303,51 +325,80 @@ class ReadingController extends Controller
             ->inRandomOrder()
             ->first();
 
-        return view('questions.hsc', compact('posts', 'year', 'category', 'nextSet', 'board_id'));
+        return view('questions.hsc', compact('posts', 'year', 'category', 'nextSet', 'board_id', 'subjectData'));
     }
 
     public function bcs($year = null, $category = null)
     {
-        // 1. Handle "Random" request
+        // 1. Enhanced "Random" Logic: Pick a random BCS year, not just a random post
         if ($year === 'random') {
-            $randomPost = Post::where('institution_id', 4)->inRandomOrder()->first();
-            if ($randomPost) {
-                return redirect()->route('bcs.show', ['year' => $randomPost->year]);
-            }
+            $randomYear = Post::where('institution_id', 4)
+                ->inRandomOrder()
+                ->value('year');
+
+            return $randomYear 
+                ? redirect()->route('bcs.show', ['year' => $randomYear])
+                : redirect()->back();
         }
 
-        // 2. Set Default Year (Latest BCS)
-        if (!$year || !is_numeric($year)) {
-            // Cache this or use a simple query to find the max year
-            $year = Post::where('institution_id', 4)->max('year') ?? 46;
+        $selectedYear = null;
+        $finalCategory = null;
+        $subjectId = null;
+
+        // 2. Logic: Identify Year or Subject Slug
+        if ($year) {
+            if (is_numeric($year)) {
+                $selectedYear = $year;
+                $finalCategory = $category; 
+            } else {
+                $finalCategory = $year; 
+                $selectedYear = null;
+            }
         }
 
         // 3. Main Query
         $query = Post::where('institution_id', 4)
-            ->where('year', $year)
             ->with(['subject', 'institution', 'board']);
 
-        if ($category && $category !== 'all') {
-            $query->where('category', $category);
+        if ($finalCategory && $finalCategory !== 'all') {
+            $subject = Subject::where('slug', $finalCategory)->first();
+            if ($subject) {
+                $subjectId = $subject->id;
+                $query->where('subject_id', $subjectId);
+            }
         }
 
-        // Get all 200 questions for the "Paper Texture" full view
-        $posts = $query->orderBy('id', 'asc')->get();
+        if ($selectedYear) {
+            $query->where('year', $selectedYear);
+        }
 
-        // 4. Find the Previous BCS (for better study flow: 46 -> 45 -> 44)
+        // 4. Default Behavior: Show latest BCS (Descending)
+        if (!$selectedYear && !$subjectId) {
+            $selectedYear = Post::where('institution_id', 4)->max('year') ?? 46;
+            $query->where('year', $selectedYear);
+        }
+
+        // 5. Weighted Random Logic
+        // We order by (year * random_factor) descending. 
+        // This ensures that 46th BCS posts have a much higher statistical 
+        // probability of appearing first than 10th BCS posts.
+        
+        $query->orderByRaw('year * (1 + RAND()) DESC');
+
+        $posts = $query->paginate(200);
+
+        // 6. Navigation Logic
+        // For the 'Next' button, we still want a logical flow (Descending Year)
         $nextSet = Post::where('institution_id', 4)
-            ->where('year', '<', $year) 
-            ->orderBy('year', 'desc')
+            ->when($selectedYear, fn($q) => $q->where('year', '<', $selectedYear)->orderBy('year', 'desc'))
             ->first();
 
-        // Fallback: If at the very first BCS, pick a random year
-        if (!$nextSet) {
-            $nextSet = Post::where('institution_id', 4)
-                ->where('year', '!=', $year)
-                ->inRandomOrder()
-                ->first();
-        }
-
-        return view('questions.bcs', compact('posts', 'year', 'category', 'nextSet'));
+        return view('questions.bcs', [
+            'posts' => $posts,
+            'year' => $selectedYear,
+            'category' => $finalCategory,
+            'nextSet' => $nextSet,
+            'isSubjectView' => (bool)$subjectId 
+        ]);
     }
 }

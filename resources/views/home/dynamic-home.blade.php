@@ -1,4 +1,4 @@
-<div id="dynamic-home-container" class="flex flex-col gap-14 opacity-0 transition-opacity duration-500">
+<div id="dynamic-home-container" class="flex flex-col gap-14">
     
     <section id="section-resume" class="order-first hidden py-6 bg-gradient-to-r from-warning-50 to-white border-y border-warning-100">
         <div class="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -17,7 +17,7 @@
         </div>
     </section>
 
-    <section id="section-hsc" class="order-1 py-4 transition-all duration-500">
+    <section id="section-hsc" class="order-1 py-4 transition-all duration-500 hsc">
         <div class="container mx-auto px-4">
             <div class="text-center mb-10">
                 <h2 class="text-3xl font-extrabold text-slate-900 mb-2">এইচএসসি বোর্ড প্রশ্ন</h2>
@@ -47,7 +47,7 @@
         </div>
     </section>
 
-    <section id="section-bcs" class="order-2 py-4 transition-all duration-500 pt-8 lg:pt-16">
+    <section id="section-bcs" class="order-2 py-4 transition-all duration-500 pt-8 lg:pt-16 bcs">
         <div class="container mx-auto px-4">
             <div class="text-center mb-10">
                 <h2 class="text-3xl font-extrabold text-slate-900 mb-2">বিসিএস প্রিলিমিনারি</h2>
@@ -63,7 +63,7 @@
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 group-hover:text-slate-600">তম বিসিএস</span>
                 </a>
                 @endforeach
-                <a href="{{ route('search') }}" class="flex flex-col items-center justify-center p-2 lg:p-4 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all">
+                <a href="{{ route('search') }}" class="col-span-3 sm:col-span-1 flex flex-col items-center justify-center p-2 lg:p-4 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>

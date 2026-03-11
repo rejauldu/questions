@@ -32,10 +32,16 @@
         <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-10">
             @foreach($subjects as $sub)
                 @php
-                    // জেনেরিক নাম তৈরি (e.g., "Bangla")
-                    $genericName = trim(str_replace(['1st', '2nd', '১ম', '২য়', 'Paper', 'পত্র'], '', $sub->name));
-                    // জেনেরিক স্লাগ তৈরি (e.g., "bangla")
-                    $genericSlug = \Illuminate\Support\Str::slug($genericName);
+                    // Define the terms to remove only if they are at the end
+                    // \b ensures we match whole words, and $ ensures they are at the end
+                    // 'i' at the end makes it case-insensitive
+                    $pattern = '/\s+(1st|2nd|১ম|২য়|পত্র)$/iu';
+
+                    // preg_replace handles the logic
+                    $genericName = trim(preg_replace($pattern, '', $sub->name));
+
+                    // Generate the generic slug
+                    $genericSlug = url_slug($genericName);
                 @endphp
                 
                 <a href="{{ route('exam.show', [$institution->slug, $genericSlug]) }}" 

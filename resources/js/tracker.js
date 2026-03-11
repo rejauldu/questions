@@ -20,26 +20,34 @@ export function initTracker() {
     }
 }
 
-// Handler for Section Reordering and Resume Link
 function handleHomeSections(data) {
     const container = document.getElementById('dynamic-home-container');
     if (!container) return;
 
-    const bcsSec = document.getElementById('section-bcs');
-    const hscSec = document.getElementById('section-hsc');
-    const resumeSec = document.getElementById('section-resume');
+    // Define the intent types
+    const intent = data.intent; // e.g., 'HSC' or 'BCS'
+    
+    if (intent) {
+        // Target all elements belonging to either category
+        const hscElements = document.querySelectorAll('.hsc');
+        const bcsElements = document.querySelectorAll('.bcs');
 
-    // 1. Reorder Logic
-    if (bcsSec && hscSec) {
-        hscSec.style.order = (data.intent === 'HSC') ? "1" : "2";
-        bcsSec.style.order = (data.intent === 'HSC') ? "2" : "1";
+        if (intent === 'HSC') {
+            hscElements.forEach(el => el.classList.remove('hidden'));
+            bcsElements.forEach(el => el.classList.add('hidden'));
+        } else if (intent === 'BCS') {
+            bcsElements.forEach(el => el.classList.remove('hidden'));
+            hscElements.forEach(el => el.classList.add('hidden'));
+        }
     }
 
-    // 2. Resume Logic
+    // Resume Logic
+    const resumeSec = document.getElementById('section-resume');
     if (data.last_post && resumeSec) {
         resumeSec.classList.remove('hidden');
         const textEl = document.getElementById('resume-text');
         const linkCont = document.getElementById('resume-link-container');
+        
         if (textEl) textEl.innerText = `আপনি সর্বশেষ ${data.last_post.subject_name} পড়ছিলেন।`;
         if (linkCont) {
             linkCont.innerHTML = `
@@ -49,7 +57,7 @@ function handleHomeSections(data) {
         }
     }
 
-    // Reveal container
+    // Reveal container with a smooth transition
     container.classList.replace('opacity-0', 'opacity-100');
 }
 

@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\Board;
 use App\Models\Institution;
 use App\Models\Subject;
+use App\Services\AiSearchService;
 use App\Services\Image2WebpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,9 +29,9 @@ class QuestionController extends Controller
     }
 
     /* =====================================================
-        INDEX
+        INDEX (AI-Enhanced)
     ===================================================== */
-    public function index(Request $request)
+    public function index(Request $request, AiSearchService $aiService)
     {
         $q = trim($request->input('q'));
 
@@ -39,7 +40,21 @@ class QuestionController extends Controller
         }
 
         $query = Post::query()->with(['institution', 'subject', 'board']);
-        
+
+        if ($q) {
+            $aiParams = $aiService->extractParameters($q);
+            if (!empty($aiParams)) {
+                $query->where(function ($sub) use ($aiParams, $aiService) {
+                    foreach ($aiService->getMapKeys() as $key) {
+                        if (isset($aiParams[$key])) {
+                            // এখানে 'posts.' প্রিফিক্স যোগ করা হয়েছে
+                            $sub->where('posts.' . $key, $aiParams[$key]);
+                        }
+                    }
+                });
+            }
+        }
+
         $this->applyViewedStatus($query);
         $this->applySearchAndScoring($query, $q);
 
@@ -129,48 +144,6 @@ class QuestionController extends Controller
         ]);
     }
 
-      /**
-
-     * Show the form for editing the specified resource using Blade.
-
-     */
-
-    public function edit(string $id)
-
-    {
-
-        // Fetch the question (Post)
-
-        $question = Post::findOrFail($id);
-
-    
-
-        return view('questions.edit', [
-
-            'question'     => $question,
-
-            'institutions' => Institution::orderBy('name')->get(['id', 'name']),
-
-            'boards'       => Board::orderBy('name')->get(['id', 'name']),
-
-            'years'        => range(date('Y'), date('Y') - 10), // Increased range for editing older posts
-
-            'classes'      => [
-
-                ['value' => 1, 'text' => '1st Year'],
-
-                ['value' => 2, 'text' => '2nd Year'],
-
-                ['value' => 3, 'text' => '3rd Year'],
-
-                ['value' => 4, 'text' => '4th Year'],
-
-            ]
-
-        ]);
-
-    }
-
     /* =====================================================
         UPDATE
     ===================================================== */
@@ -235,17 +208,17 @@ class QuestionController extends Controller
               ->leftJoin('boards', 'boards.id', '=', 'posts.board_id');
 
         $full = "%{$q}%";
-        $scoreBindings = [$full, $full, $full, $full, $full, $full, $full];
+        // Reordered to match the CASE statement logic
+        $scoreBindings = [$full, $full, $full, $full, $q, $q, $full]; 
 
-        // Scoring Logic (No MAX wrapper needed as we aren't using GROUP BY)
         $scoreSql = "(CASE
-            WHEN posts.article LIKE ? THEN 75
-            WHEN institutions.name LIKE ? THEN 90
-            WHEN subjects.name LIKE ? THEN 90
-            WHEN boards.name LIKE ? THEN 75
-            WHEN posts.chapter LIKE ? THEN 50
-            WHEN posts.topic_name LIKE ? THEN 30
-            WHEN posts.year LIKE ? THEN 90
+            WHEN posts.article LIKE ? THEN 100
+            WHEN posts.topic_name LIKE ? THEN 90
+            WHEN subjects.name LIKE ? THEN 85
+            WHEN institutions.name LIKE ? THEN 80
+            WHEN posts.chapter = ? THEN 75
+            WHEN posts.year = ? THEN 70
+            WHEN boards.name LIKE ? THEN 60
             ELSE 0 END)";
 
         $query->addSelect(DB::raw("$scoreSql AS match_score"))
@@ -295,10 +268,12 @@ class QuestionController extends Controller
 
     protected function getAvailableFilters()
     {
+        $years = Post::distinct()->pluck('year')->filter()->map(fn($year) => explode('/', $year)[0])->unique()->sortDesc()->values();
+        
         return Cache::remember('question_filters', 86400, fn () => [
             'institutions' => Institution::orderBy('name')->get(['id', 'name']),
             'boards' => Board::orderBy('name')->get(['id', 'name']),
-            'years' => Post::distinct()->pluck('year')->filter()->sortDesc()->values(),
+            'years' => $years,
         ]);
     }
     

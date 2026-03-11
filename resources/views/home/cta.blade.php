@@ -10,11 +10,11 @@
         {{-- Final CTAs --}}
         <div class="flex flex-col sm:flex-row justify-center gap-4 mb-10">
             
-            <a href="{{ route('questions.index') }}"
+            <a href="{{ route('exam.show', ['hsc']) }}"
                 class="inline-flex items-center justify-center bg-primary-600 text-white text-lg font-bold 
                        px-8 py-3 rounded-xl shadow-lg transition duration-300 
                        hover:bg-primary-700 hover:shadow-xl transform hover:scale-[1.02]">
-                Search SSC & HSC Question Bank &rarr;
+                Search HSC Question Bank &rarr;
             </a>
 
             <a href="{{ route('register') }}" 

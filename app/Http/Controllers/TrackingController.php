@@ -42,24 +42,29 @@ class TrackingController extends Controller
             ]);
         }
 
-        return response()->json(['status' => 'tracked'])
-            ->withCookie(cookie()->forever('examdao_uuid', $uuid));
+        return response()->json([
+            'status' => 'tracked',
+            'csrf_token' => csrf_token() // Sending fresh token
+        ])->withCookie(cookie()->forever('examdao_uuid', $uuid));
     }
 
     /**
      * Consolidated User Personalization Logic
-     * Handles: Section Reordering (Intent), Resume Link, and Hero HTML
      */
     public function getUserIntent(Request $request)
     {
         $uuid = $request->cookie('examdao_uuid');
         $user = auth()->user();
 
+        // Even if no data, we should return the CSRF token to keep the frontend session alive
         if (!$uuid && !$user) {
-            return response()->json(['status' => 'no_data']);
+            return response()->json([
+                'status' => 'no_data',
+                'csrf_token' => csrf_token()
+            ]);
         }
 
-        // 1. Identify User Intent (Top Interest based on Activity Logs)
+        // 1. Identify User Intent
         $topInterest = ActivityLog::where('visitor_uuid', $uuid)
             ->select('institution_id', 'subject_id', DB::raw('count(*) as total'))
             ->groupBy('institution_id', 'subject_id')
@@ -71,7 +76,7 @@ class TrackingController extends Controller
             $intent = ($topInterest->institution_id == 2) ? 'HSC' : 'BCS';
         }
 
-        // 2. Identify Last Viewed Post (For Resume Section)
+        // 2. Identify Last Viewed Post
         $lastViewed = ViewedPost::where($user ? ['user_id' => $user->id] : ['visitor_uuid' => $uuid])
             ->with(['post.subject', 'post.institution'])
             ->latest('viewed_at')
@@ -90,32 +95,28 @@ class TrackingController extends Controller
             ];
         }
 
-        // 3. Generate Hero HTML (Cached for performance)
+        // 3. Generate Hero HTML (Cached)
         $heroCacheKey = "hero_data_" . ($user ? "u{$user->id}" : "v{$uuid}");
         $heroData = Cache::remember($heroCacheKey, now()->addMinutes(15), function () use ($uuid, $user, $topInterest) {
             if (!$topInterest) return null;
 
-            // Fetch Viewed IDs to suggest something new
             $viewedIds = ViewedPost::where($user ? ['user_id' => $user->id] : ['visitor_uuid' => $uuid])->pluck('post_id');
 
-            // Find Unread Post (Academic)
             $post = Post::whereIn('category', self::QUESTION_TYPES)
                 ->where('institution_id', $topInterest->institution_id)
                 ->where('subject_id', $topInterest->subject_id)
                 ->whereNotIn('id', $viewedIds)
-                // কমপ্লেক্স ট্যাগ ফিল্টারিং (Article এবং CQ 'a' কলামের জন্য)
                 ->where(function($q) {
                     $tags = ['%<svg%', '%<table%', '%<ul%', '%<li%', '%<div%'];
                     foreach ($tags as $tag) {
                         $q->where('article', 'NOT LIKE', $tag);
-                        $q->where('a', 'NOT LIKE', $tag); // CQ প্রশ্নের স্টেম বা ক-এর জন্য
+                        $q->where('a', 'NOT LIKE', $tag);
                     }
                 })
                 ->with(['subject', 'institution'])
                 ->inRandomOrder()
                 ->first();
 
-            // Fallback to oldest viewed if everything is read
             if (!$post) {
                 $oldestId = ViewedPost::where($user ? ['user_id' => $user->id] : ['visitor_uuid' => $uuid])
                     ->whereHas('post', function($q) use ($topInterest) {
@@ -130,7 +131,6 @@ class TrackingController extends Controller
 
             if (!$post) return null;
 
-            // Prepare Hero View Data
             $formattedInstName = institution($post->institution->name);
             $campaign = Campaign::where('institution_id', $post->institution_id)->where('is_active', 1)->first();
             
@@ -168,18 +168,19 @@ class TrackingController extends Controller
             ];
         });
 
-        // 4. Return Final Combined JSON
+        // 4. Return Final Combined JSON with CSRF
         return response()->json([
-            'status'    => 'success',
-            'type'      => 'dynamic_home',
-            'intent'    => $intent,
-            'last_post' => $lastPostData,
-            'hero'      => $heroData // Contains 'html' key for the tracker.js handleHeroContent
+            'status'     => 'success',
+            'csrf_token' => csrf_token(), // Fresh Token for the JS to pick up
+            'type'       => 'dynamic_home',
+            'intent'     => $intent,
+            'last_post'  => $lastPostData,
+            'hero'       => $heroData
         ]);
     }
 
     /**
-     * Return suggested questions based on history (Static partial)
+     * Return suggested questions (Partial)
      */
     public function getSuggestions(Request $request)
     {

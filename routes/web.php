@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
+    BcsController,
     PageController,
     QuestionController,
     ReadingController,
@@ -9,6 +10,8 @@ use App\Http\Controllers\{
     BookmarkController,
     CampaignController,
     ChatbotController,
+    GuideController,
+    HscController,
     ProfileController,
     QuestionCorrectionController,
     SubjectDateController,
@@ -49,8 +52,17 @@ Route::get('/subject/{slug}', [QuestionController::class, 'subject'])->name('sub
 Route::get('/read/{institution}/{subject}/{question}/{slug?}', [ReadingController::class, 'show'])->name('reading.mode');
 
 Route::get('/exam/{institution?}/{subject?}/{category?}', [ReadingController::class, 'exam'])->name('exam.show');
+Route::get('/bcs', [BcsController::class, 'index'])->name('bcs.index');
 Route::get('/bcs/{year?}/{category?}', [ReadingController::class, 'bcs'])->name('bcs.show');
-Route::get('/hsc/{subject?}/{year?}/{category?}', [ReadingController::class, 'hsc'])->name('hsc.show');
+Route::get('/hsc', [HscController::class, 'index'])->name('hsc.index');
+Route::get('/hsc/{subject}/{year?}/{category?}', [HscController::class, 'hsc'])->name('hsc.show');
+
+/*
+|--------------------------------------------------------------------------
+| Guide
+|--------------------------------------------------------------------------
+*/
+Route::get('/guide/{slug}', [GuideController::class, 'show'])->name('guide.show');
 
 /*
 |--------------------------------------------------------------------------

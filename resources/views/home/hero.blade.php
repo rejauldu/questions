@@ -40,12 +40,12 @@
 
         {{-- Institution Grid - Compact 2x2 for mobile --}}
         <div class="w-full max-w-4xl">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            <!-- Changed grid to flex and added justify-center -->
+            <div class="flex flex-wrap justify-center gap-2.5">
                 @foreach($institutions as $inst)
                 <a href="{{ route('exam.show', $inst->slug) }}" 
-                   class="group flex items-center gap-3 p-3 bg-white/10 border border-white/10 rounded-xl transition-all hover:bg-white hover:shadow-xl">
+                class="group flex items-center gap-3 p-3 bg-white/10 border border-white/10 rounded-xl transition-all hover:bg-white hover:shadow-xl w-[calc(50%-1.25rem)] md:w-[calc(25%-1.25rem)] min-w-[150px]">
                     
-                    {{-- Mini Icon --}}
                     <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 text-white font-bold text-xs group-hover:bg-primary-100 group-hover:text-primary-600">
                         {{ strtoupper(substr($inst->name, 0, 1)) }}
                     </div>

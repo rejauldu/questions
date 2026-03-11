@@ -16,15 +16,22 @@
             
             {{-- 1. Filter Fields (Top) --}}
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                <form id="filterForm" onsubmit="return handlePortalSearch(event)" class="grid grid-cols-3 gap-3">
-                    {{-- Subject Dropdown (Takes 2/3 width) --}}
+                @php
+                    // Detection for HSC to show/hide Chapter filter
+                    $isHsc = (strtolower($institution->slug) === 'hsc');
+                @endphp
+
+                <form id="filterForm" onsubmit="return handlePortalSearch(event)" 
+                    class="grid {{ $isHsc ? 'grid-cols-4' : 'grid-cols-3' }} gap-3">
+                    
+                    {{-- Subject Dropdown --}}
                     <div class="col-span-2">
                         <label for="sub" class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-widest">Subject</label>
                         <select id="sub" onchange="updateButtonText(true)" class="w-full bg-slate-50 border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-primary-500 focus:border-primary-500 py-2.5 transition-all">
                             <option value="all" data-name="">All Subjects</option>
                             @foreach($subjects as $sub)
                                 @php 
-                                    $genericName = trim(str_replace(['1st', '2nd', '১ম', '২য়'], '', $sub->name));
+                                    $genericName = trim(preg_replace('/\s+(1st|2nd|১ম|২য়)$/iu', '', $sub->name));
                                     $gSlug = url_slug($genericName); 
                                 @endphp
                                 <option value="{{ $gSlug }}" data-name="{{ $genericName }}" {{ $selectedSub == $gSlug ? 'selected' : '' }}>
@@ -34,7 +41,7 @@
                         </select>
                     </div>
 
-                    {{-- Category Dropdown (CQ/MCQ/Writing) (Takes 1/3 width) --}}
+                    {{-- Category Dropdown --}}
                     <div class="col-span-1">
                         <label for="cat" class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-widest">Category</label>
                         <select id="cat" onchange="updateButtonText(true)" class="w-full bg-slate-50 border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-primary-500 focus:border-primary-500 py-2.5 uppercase">
@@ -44,6 +51,19 @@
                             <option value="Writing" {{ $category == 'Writing' ? 'selected' : '' }}>Writing</option>
                         </select>
                     </div>
+
+                    {{-- Chapter Dropdown (HSC ONLY) --}}
+                    @if($isHsc)
+                    <div class="col-span-1">
+                        <label for="chap" class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1 tracking-widest">Chapter</label>
+                        <select id="chap" onchange="updateButtonText(true)" class="w-full bg-slate-50 border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-primary-500 focus:border-primary-500 py-2.5">
+                            <option value="">All</option>
+                            @for ($i = 1; $i <= 12; $i++)
+                                <option value="{{ $i }}" {{ request('chapter') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    @endif
                 </form>
             </div>
 
@@ -103,46 +123,54 @@
     function updateButtonText(userInteracted = false) {
         const subSelect = document.getElementById('sub');
         const catSelect = document.getElementById('cat');
+        const chapSelect = document.getElementById('chap'); // Exists only for HSC
         const btnText = document.getElementById('dynamicBtnText');
         
         if (!btnText) return;
 
-        // If page just loaded and we have selected values from server, show them
-        // otherwise if it's a fresh load with no interaction, show "Start Practice"
         const selectedSubName = subSelect.options[subSelect.selectedIndex].getAttribute('data-name') || "";
         const selectedCat = catSelect.value !== "" ? catSelect.options[catSelect.selectedIndex].text : "";
+        const selectedChap = (chapSelect && chapSelect.value !== "") ? " Ch-" + chapSelect.value : "";
         
-        if (!userInteracted && !selectedSubName && !selectedCat) {
+        if (!userInteracted && !selectedSubName && !selectedCat && !selectedChap) {
             btnText.innerText = "Start Practice";
             return;
         }
 
-        if (!selectedSubName && !selectedCat) {
+        if (!selectedSubName && !selectedCat && !selectedChap) {
             btnText.innerText = "Start Practice";
         } else {
             let displayText = "Practice " + selectedSubName;
             if (selectedCat) displayText += " " + selectedCat;
+            if (selectedChap) displayText += selectedChap;
             btnText.innerText = displayText.trim();
         }
     }
 
     /**
-     * Redirect logic
+     * Redirect logic: Institution/Subject/Category + ?chapter=X
      */
     function handlePortalSearch(event) {
         event.preventDefault();
         const subject = document.getElementById('sub').value;
         const category = document.getElementById('cat').value;
+        const chapElem = document.getElementById('chap');
         const instSlug = "{{ $institution->slug }}";
         
+        // Construct the Base Clean URL
         let targetUrl = `/exam/${instSlug}/${subject}`;
         if (category) targetUrl += `/${category}`;
+        
+        // Append Chapter as Query Parameter
+        if (chapElem && chapElem.value !== "") {
+            targetUrl += `?chapter=${chapElem.value}`;
+        }
         
         window.location.href = targetUrl;
         return false;
     }
 
-    // Run once on load to catch pre-selected filters from the URL
+    // Run on load to set initial button state
     window.addEventListener('DOMContentLoaded', () => {
         updateButtonText(false); 
     });

@@ -47,8 +47,8 @@ class SitemapController extends Controller
         File::put($sitemapFolder . '/sitemap-static.xml', $staticXml);
 
         // --- 2️⃣ Blog sitemap (New!) ---
-        $blogXml = view('sitemaps.blogs', ['blogs' => $blogs])->render();
-        File::put($sitemapFolder . '/sitemap-blogs.xml', $blogXml);
+        // $blogXml = view('sitemaps.blogs', ['blogs' => $blogs])->render();
+        // File::put($sitemapFolder . '/sitemap-blogs.xml', $blogXml);
 
         // --- 3️⃣ Question sitemaps in chunks ---
         $questionSitemaps = [];
@@ -64,7 +64,7 @@ class SitemapController extends Controller
 
         // --- 4️⃣ Master Index ---
         // Combine everything: static, blogs, and the chunked questions
-        $allSitemaps = array_merge(['sitemap-static.xml', 'sitemap-blogs.xml'], $questionSitemaps);
+        $allSitemaps = array_merge(['sitemap-static.xml'], $questionSitemaps);
         
         $indexXml = view('sitemaps.index', ['sitemaps' => $allSitemaps])->render();
         $indexFile = $sitemapFolder . '/sitemap_index.xml';

@@ -26,7 +26,7 @@
             </div>
 
             {{-- 2. Smart Tools --}}
-            <div class="space-y-3">
+            <div class="hidden md:block space-y-3">
                 <h4 class="text-lg font-semibold text-white mb-3">Smart Tools</h4>
                 <ul class="space-y-2 text-sm">
                     <li><a href="{{ route('questions.index') }}" class="text-gray-300 hover:text-yellow-400 transition">Search Question Bank</a></li>
@@ -39,12 +39,12 @@
             </div>
 
             {{-- 3. Exam Categories --}}
-            <div class="hidden md:block space-y-3">
+            <div class="space-y-3">
                 <h4 class="text-lg font-semibold text-white mb-3">Exam Categories</h4>
                 <ul class="space-y-2 text-sm">
                     <li><a href="{{ route('exam.show', 'ssc') }}" class="text-gray-300 hover:text-yellow-400 transition">SSC Preparation</a></li>
                     <li><a href="{{ route('exam.show', 'hsc') }}" class="text-gray-300 hover:text-yellow-400 transition">HSC Question Bank</a></li>
-                    <li><a href="{{ route('exam.show', 'nu') }}" class="text-gray-300 hover:text-yellow-400 transition">National Univ. Guide</a></li>
+                    <li><a href="{{ route('exam.show', 'departmental') }}" class="text-gray-300 hover:text-yellow-400 transition">Departmental Exam</a></li>
                     <li><a href="{{ route('exam.show', 'bcs') }}" class="text-gray-300 hover:text-yellow-400 transition">BCS Study Materials</a></li>
                 </ul>
             </div>

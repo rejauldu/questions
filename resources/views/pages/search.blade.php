@@ -96,7 +96,7 @@
                     {{-- Board --}}
                     <div class="col-span-1">
                         <label for="board_id" class="block text-xs sm:text-sm font-medium text-secondary-700 mb-1">
-                            Board
+                            Board / Cadre
                         </label>
                         <select id="board_id" name="board_id"
                             class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 js-filter-trigger text-xs sm:text-sm">
@@ -160,14 +160,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.MathJax) {
-        MathJax.typesetPromise();
-    }
-});
-</script>
-@endpush

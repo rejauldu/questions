@@ -15,6 +15,7 @@
   opacity: 1;
   transform: translateY(0);
 }
+
 @layer base {
   table.table {
     @apply w-full border border-gray-400 border-separate border-spacing-0;
@@ -34,6 +35,18 @@
 
   table.table tbody tr:nth-child(even) {
     @apply bg-gray-50;
+  }
+
+  /* --- SVG Flowchart Control --- */
+  /* This targets SVGs within your content area */
+  svg {
+    @apply mx-auto block h-auto w-full max-w-xs;
+  }
+
+  /* If you have small icons that shouldn't be 500px, 
+     you can exclude them if they have a specific class */
+  svg.icon, svg.inline {
+    @apply w-auto inline-block max-w-none;
   }
 }
 
