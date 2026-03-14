@@ -36,7 +36,8 @@ class Post extends Model
         'image3',
         'image4',
         'user_id',
-        'is_verified'
+        'is_verified',
+        'trained'
     ];
 
     protected $casts = [

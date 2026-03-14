@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
+    TransformerController,
     BcsController,
     PageController,
     QuestionController,
@@ -18,6 +19,8 @@ use App\Http\Controllers\{
     SitemapController,
     ToolController,
     TrackingController};
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -87,6 +90,19 @@ Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 Route::post('/auth/track-activity/{question}', [TrackingController::class, 'logActivity'])->name('track.activity');
 
 Route::get('/suggestions', [TrackingController::class, 'getSuggestions'])->name('suggestions.index');
+
+/*
+|--------------------------------------------------------------------------
+| AI
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('ai')->group(function () {
+    Route::get('/search', [TransformerController::class, 'search']);
+    Route::get('/train', [TransformerController::class, 'train']);
+    Route::get('/reset', [TransformerController::class, 'reset']);
+    Route::get('/test', [TransformerController::class, 'test']);
+});
 
 /*
 |--------------------------------------------------------------------------

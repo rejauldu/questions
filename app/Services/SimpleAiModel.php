@@ -6,47 +6,45 @@ class SimpleAiModel
 {
     private string $modelPath;
     public array $data;
-    private int $embeddingDim = 16;
-    private int $outputParams = 5; 
-
-    private array $defaultVocab = [
-        '<unk>' => 0, 'physics' => 1, 'chemistry' => 2, 'math' => 3, 'ict' => 4,
-        'biology' => 5, 'dhaka' => 6, 'cumilla' => 7, 'rajshahi' => 8, 'board' => 9,
-        'question' => 10, 'solution' => 11, 'hsc' => 12, 'ssc' => 13, 'bcs' => 14,
-        'mcq' => 15, 'chapter' => 16, 'force' => 17, 'energy' => 18, 'acid' => 19,
-        'logic' => 20, 'gate' => 21, '2024' => 22, '2023' => 23, '2022' => 24,
-        'du' => 25, 'buet' => 26, 'medical' => 27, 'admission' => 28, 'unit' => 29,
-    ];
+    private int $embeddingDim = 64; // Set to 64 to match Service
+    private int $outputParams = 6;  // Matches your new mapKeys count
 
     public function __construct()
     {
         $this->modelPath = storage_path('app/ai/weights.php');
         
+        // Ensure directory exists
+        if (!is_dir(dirname($this->modelPath))) {
+            mkdir(dirname($this->modelPath), 0755, true);
+        }
+
         if (!file_exists($this->modelPath)) {
-            $this->install();
+            $this->install($this->outputParams);
         }
 
         $this->data = require $this->modelPath;
     }
 
-    /**
-     * $paramCount এখন ডাইনামিক্যালি AiSearchService থেকে আসবে
-     */
-    public function install(int $paramCount = 5): void
+    public function install(int $paramCount = 6): void
     {
         $this->outputParams = $paramCount;
 
         $initialData = [
-            'vocab' => $this->defaultVocab,
+            'dictionary' => [
+                '<unk>' => 0, 'physics' => 1, 'chemistry' => 2, 'math' => 3, 'ict' => 4,
+                'biology' => 5, 'mcq' => 6, 'chapter' => 7, '2024' => 8, '2023' => 9,
+            ],
             'embeddings' => [],
             'weights' => [],
             'bias' => array_fill(0, $this->outputParams, 0.0)
         ];
 
-        foreach ($initialData['vocab'] as $word => $id) {
+        // Initialize embeddings for default vocab
+        foreach ($initialData['dictionary'] as $word => $id) {
             $initialData['embeddings'][$id] = $this->randomVector($this->embeddingDim);
         }
 
+        // Initialize Projection Weights (Dimensions x Params)
         for ($i = 0; $i < $this->embeddingDim; $i++) {
             $initialData['weights'][$i] = $this->randomVector($this->outputParams);
         }
@@ -57,16 +55,22 @@ class SimpleAiModel
 
     private function randomVector(int $size): array
     {
-        return array_map(fn() => (mt_rand() / mt_getrandmax() - 0.5) * 0.1, range(1, $size));
+        // Xavier/Glorot-like initialization
+        $scale = sqrt(2.0 / $size);
+        return array_map(fn() => (mt_rand() / mt_getrandmax() * 2 - 1) * $scale, range(1, $size));
     }
 
+    /**
+     * Note: We now use the getOrAddTokens logic in AiSearchService 
+     * for auto-adding words, but we keep this for legacy safety.
+     */
     public function tokenize(string $text): array
     {
         $text = preg_replace('/[^\p{L}\p{N}\s]/u', '', strtolower($text));
         $words = explode(' ', trim($text));
         
         return array_map(function($w) {
-            return $this->data['vocab'][$w] ?? $this->data['vocab']['<unk>'];
+            return $this->data['dictionary'][$w] ?? $this->data['dictionary']['<unk>'];
         }, array_filter($words));
     }
 
