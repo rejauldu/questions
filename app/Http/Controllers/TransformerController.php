@@ -55,7 +55,7 @@ class TransformerController extends Controller
             $finalLoss = $this->model->learn($trainingText, $targets, $learningRate);
             
             // Early exit if loss is less than 1% (0.01)
-            if ($finalLoss < 0.01) {
+            if ($finalLoss < 0.0001) {
                 break;
             }
         }
@@ -133,5 +133,52 @@ class TransformerController extends Controller
     {
         $this->model->initializeWeights();
         return response()->json(['status' => 'Model reset. Weights re-initialized.']);
+    }
+    
+    /**
+     * Bulk Trainer: Processes every record in the DB for a single epoch.
+     * Useful for initial model grounding.
+     */
+    public function trainAll()
+    {
+        // Disable timeout for large datasets
+        set_time_limit(0); 
+        
+        $totalProcessed = 0;
+        $learningRate = 0.05;
+        $startTime = microtime(true);
+
+        // Use chunking to keep memory usage low
+        Post::with(['institution', 'subject', 'board'])
+            ->chunk(100, function ($posts) use (&$totalProcessed, $learningRate) {
+                foreach ($posts as $post) {
+                    // 1. Synthesize Text
+                    $trainingText = $this->prepareTrainingText($post);
+
+                    // 2. Prepare Target Vector
+                    $targets = [
+                        (int)($post->institution_id ?? 0),
+                        (int)($post->subject_id ?? 0),
+                        (int)($post->year ?? 0),
+                        (int)($post->board_id ?? 0),
+                        (int)($post->chapter ?? 0),
+                        $this->categoryLabels[strtolower($post->category)] ?? 0
+                    ];
+
+                    // 3. Single pass (1 epoch) per record
+                    $this->model->learn($trainingText, $targets, $learningRate);
+                    
+                    $totalProcessed++;
+                }
+            });
+
+        $executionTime = round(microtime(true) - $startTime, 2);
+
+        return response()->json([
+            'status' => 'Bulk training complete',
+            'total_rows_processed' => $totalProcessed,
+            'execution_time_seconds' => $executionTime,
+            'average_speed' => $totalProcessed > 0 ? round($totalProcessed / $executionTime, 2) . ' rows/sec' : 0
+        ]);
     }
 }

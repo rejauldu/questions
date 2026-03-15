@@ -6,7 +6,7 @@ use App\Models\Post;
 use App\Models\Board;
 use App\Models\Institution;
 use App\Models\Subject;
-use App\Services\AiSearchService;
+use App\Services\Transformer\ModelService;
 use App\Services\Image2WebpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +17,12 @@ class QuestionController extends Controller
     const PER_PAGE = 32;
     const MAX_IMAGES = 4;
 
-    public function __construct()
+    /**
+     * Map AI numeric category output tokens back to DB strings.
+     */
+    protected array $categoryLabels = [1 => 'cq', 2 => 'mcq', 3 => 'writing'];
+
+    public function __construct(protected ModelService $model)
     {
         $this->middleware('auth')->only(['create', 'store', 'update']);
         $this->middleware(function ($request, $next) {
@@ -29,53 +34,74 @@ class QuestionController extends Controller
     }
 
     /* =====================================================
-        INDEX (AI-Enhanced)
+        INDEX (Main Listing with AI Parameters)
     ===================================================== */
-    public function index(Request $request, AiSearchService $aiService)
+    public function index(Request $request)
     {
-        $q = trim($request->input('q'));
-
+        $q = trim($request->input('q', ''));
+        
+        // Translate for internal logic processing
+        $en_q = $this->translateBnToEn($q);
+    
         if ($request->has('q') && $q === '') {
             return redirect()->route('questions.index');
         }
-
+    
         $query = Post::query()->with(['institution', 'subject', 'board']);
-
-        // 1. Extract AI Parameters and apply them directly to the query
-        if ($q) {
-            $aiParams = $aiService->extractParameters($q);
-            dd($aiParams);
-            if (!empty($aiParams)) {
-                $query->where(function ($sub) use ($aiParams, $aiService) {
-                    foreach ($aiService->getMapKeys() as $key) {
-                        if (isset($aiParams[$key]) && $aiParams[$key] !== '') {
-                            // Apply filters extracted by AI (institution_id, subject_id, etc.)
-                            $sub->where('posts.' . $key, $aiParams[$key]);
-                        }
+    
+        // 1. Sequential Parsing using the translated query
+        if (!empty($en_q)) {
+            $parsed = $this->parseSearchQuery($en_q);
+            
+            if (!empty($parsed)) {
+                $query->where(function ($sub) use ($parsed) {
+                    // Handle Institution
+                    if (isset($parsed['institution'])) {
+                        $sub->whereHas('institution', function($instQuery) use ($parsed) {
+                            $instQuery->where('name', 'LIKE', $parsed['institution'] . '%');
+                        });
+                    }
+    
+                    // Handle Subject (Matches "Physics 1st", etc.)
+                    if (isset($parsed['subject'])) {
+                        $sub->whereHas('subject', function($subjQuery) use ($parsed) {
+                            $subjQuery->where('name', 'like', $parsed['subject'] . '%');
+                        });
+                    }
+    
+                    // Handle Chapter
+                    if (isset($parsed['chapter'])) {
+                        $sub->where('posts.chapter', $parsed['chapter']);
+                    }
+                    
+                    // Handle Year
+                    if (isset($parsed['year'])) {
+                        $sub->where('posts.year', 'LIKE', '%' . $parsed['year'] . '%');
                     }
                 });
             }
         }
-
-        // 2. Apply Viewed Status (Selects posts.*)
+    
         $this->applyViewedStatus($query);
-
-        // 3. Apply Relevancy Scoring & Search
+        
+        // Use original $q for fuzzy scoring and view
         $this->applySearchAndScoring($query, $q);
-
+    
         $posts = $query
             ->paginate(self::PER_PAGE)
             ->withQueryString()
             ->withPath(route('questions.index'));
-
+    
         return view('questions.index', compact('posts', 'q'));
     }
 
     /* =====================================================
-        SEARCH (FILTER PAGE)
+        SEARCH (Manual UI Filters - Unchanged)
     ===================================================== */
     public function search(Request $request)
     {
+        $q = trim($request->input('q', ''));
+        
         $clean = array_filter($request->query(), fn ($v) => $v !== null && $v !== '');
         if ($clean !== $request->query()) {
             return redirect()->route('search', $clean)->setStatusCode(301);
@@ -84,10 +110,22 @@ class QuestionController extends Controller
         $query = Post::query()->with(['institution', 'subject', 'board']);
         $this->applyViewedStatus($query);
 
-        // Apply filters from request inputs
-        foreach (['institution_id', 'subject_id', 'board_id', 'year', 'category', 'chapter'] as $filter) {
+        $aiParams = !empty($q) ? $this->getParams($q, 0.80) : [];
+
+        $filters = ['institution_id', 'subject_id', 'board_id', 'year', 'category', 'chapter'];
+        
+        foreach ($filters as $filter) {
             if ($request->filled($filter)) {
                 $query->where("posts.$filter", $request->$filter);
+            } 
+            elseif (isset($aiParams[$filter])) {
+                if ($filter === 'category') {
+                    if (isset($this->categoryLabels[$aiParams[$filter]])) {
+                        $query->where('posts.category', $this->categoryLabels[$aiParams[$filter]]);
+                    }
+                } else {
+                    $query->where("posts.$filter", $aiParams[$filter]);
+                }
             }
         }
 
@@ -96,24 +134,173 @@ class QuestionController extends Controller
             ->orderByDesc('posts.year')
             ->orderByDesc('posts.created_at')
             ->paginate(self::PER_PAGE)
-            ->withQueryString()
-            ->withPath(route('search'));
+            ->withQueryString();
+
+        if ($posts->isEmpty() && !empty($q)) {
+            $fallbackQuery = Post::query()->with(['institution', 'subject', 'board']);
+            $this->applyViewedStatus($fallbackQuery);
+            $this->applySearchAndScoring($fallbackQuery, $q);
+            $posts = $fallbackQuery->paginate(self::PER_PAGE)->withQueryString();
+        }
 
         return view('pages.search', [
             'initialFilters' => $this->getAvailableFilters(),
             'posts' => $posts,
             'currentParams' => $request->all(),
+            'aiParams' => $aiParams
         ]);
     }
 
     /* =====================================================
-        HELPERS
+        AI / PARSING HELPERS
+    ===================================================== */
+    
+    private function parseSearchQuery(string $q): array
+    {
+        // 1. Initial Cleaning & Bengali to English
+        $q = enNum(strtolower(trim($q)));
+        
+        // Remove noise that shouldn't be in the Subject string or Chapter
+        $q = preg_replace('/\b(paper|papr|cq|mcq|writing)\b/i', '', $q);
+    
+        $institution = null;
+        $chapter = null;
+        $subject = null;
+        $year = null;
+    
+        // 2. Extract Year (4 digits) first so it doesn't get ordinal suffixes
+        // Matches: 2025, 1998, 2026
+        if (preg_match('/\b(19|20)\d{2}\b/', $q, $yearMatch)) {
+            $year = $yearMatch[0];
+            $q = str_replace($year, '', $q);
+        } 
+        // Matches 2-digit years > 20 (e.g., '25', '99') 
+        // but ONLY if not preceded by "chapter" keywords
+        elseif (preg_match('/\b(2[1-9]|[3-9]\d)\b/', $q, $yearMatch)) {
+            // Check if the word "chapter" or "ch" appears right before this number
+            // We do a quick lookbehind check
+            if (!preg_match('/(chapter|ch|chap|adhay)\s+' . $yearMatch[0] . '/i', $q)) {
+                $year = $yearMatch[0];
+                $q = str_replace($year, '', $q);
+            }
+        }
+    
+        // 3. Identify Institution (AND REMOVE FROM STRING)
+        $instMap = [
+            'ssc' => 'SSC', 
+            'hsc' => 'HSC', 
+            'bcs' => 'BCS', 
+            'departmental' => 'Departmental', 
+            'dept' => 'Departmental'
+        ];
+        
+        foreach ($instMap as $key => $val) {
+            if (preg_match("/\b$key\b/i", $q)) {
+                $institution = $val;
+                // Crucial: Remove the institution word so it doesn't end up in the 'subject'
+                $q = preg_replace("/\b$key\b/i", '', $q);
+                break; 
+            }
+        }
+    
+        // 4. Handle Numbers (Subject Paper vs Chapter)
+        $words = explode(' ', preg_replace('/\s+/', ' ', trim($q)));
+        $numbers = [];
+        foreach ($words as $index => $word) {
+            $cleanNum = preg_replace('/[^0-9]/', '', $word);
+            if (is_numeric($cleanNum) && strlen($cleanNum) < 4) {
+                $numbers[] = ['val' => (int)$cleanNum, 'index' => $index];
+            }
+        }
+    
+        $chapterKeywordIdx = -1;
+        $chapterKeywords = ['chapter', 'ch', 'chap', 'adhay', 'অধ্যায়', 'অধ্যায়'];
+        foreach ($words as $i => $w) {
+            if (in_array($w, $chapterKeywords)) {
+                $chapterKeywordIdx = $i;
+                break;
+            }
+        }
+    
+        $subjectNum = null;
+        if (count($numbers) >= 2) {
+            if ($chapterKeywordIdx !== -1) {
+                foreach ($numbers as $n) {
+                    if (abs($n['index'] - $chapterKeywordIdx) <= 1) {
+                        $chapter = $n['val'];
+                    } else {
+                        $subjectNum = $n['val'];
+                    }
+                }
+            } else {
+                // Default: First number is Subject Paper, Second is Chapter
+                $subjectNum = $numbers[0]['val'];
+                $chapter = $numbers[1]['val'];
+            }
+        } elseif (count($numbers) === 1) {
+            if ($chapterKeywordIdx !== -1) {
+                $chapter = $numbers[0]['val'];
+            } else {
+                // If it's the only number, it's likely the Subject Paper (e.g. Physics 1st)
+                $subjectNum = $numbers[0]['val'];
+            }
+        }
+    
+        // 5. Subject Construction
+        // Filter out numbers, chapter keywords, and institution names (already removed)
+        $ignore = array_merge($chapterKeywords, ['st', 'nd', 'rd', 'th']);
+        $subjectWords = [];
+        
+        foreach ($words as $w) {
+            $cleanW = preg_replace('/[0-9stndrdth]/i', '', $w);
+            // Ensure we don't pick up empty strings or single characters
+            if (!in_array($w, $ignore) && !is_numeric($w) && strlen($cleanW) > 1) {
+                $subjectWords[] = (strtolower($w) === 'ict') ? 'ICT' : ucfirst($w);
+            }
+        }
+    
+        if (!empty($subjectWords)) {
+            $subject = implode(' ', $subjectWords);
+            if ($subjectNum) {
+                $subject .= ' ' . ordinal_suffix($subjectNum);
+            }
+        }
+    
+        // 6. Return only existing keys
+        $result = [];
+        if ($institution) $result['institution'] = $institution;
+        if ($subject)     $result['subject']     = $subject;
+        if ($chapter)     $result['chapter']     = $chapter;
+        if ($year)        $result['year']        = $year;
+    
+        return $result;
+    }
+
+    private function getParams(string $query, float $threshold = 0.75): array
+    {
+        $result = $this->model->predict($query);
+        $predictions = $result['predictions'];
+        $confidence  = $result['confidence'];
+        
+        $trustedParams = [];
+        $map = [0 => 'institution_id', 1 => 'subject_id', 2 => 'year', 3 => 'board_id', 4 => 'chapter', 5 => 'category'];
+
+        foreach ($map as $index => $key) {
+            if (isset($confidence[$index]) && $confidence[$index] >= $threshold) {
+                $trustedParams[$key] = $predictions[$key];
+            }
+        }
+        return $trustedParams;
+    }
+
+    /* =====================================================
+        CORE UTILITIES (Status, Scoring, & Filters)
     ===================================================== */
 
     private function applyViewedStatus($query)
     {
-        if (auth()->check()) {
-            $userId = auth()->id();
+        $userId = auth()->id();
+        if ($userId) {
             $query->select('posts.*')
                 ->selectRaw('EXISTS (
                     SELECT 1 FROM viewed_posts 
@@ -133,44 +320,53 @@ class QuestionController extends Controller
                   ->orderByDesc('posts.created_at');
             return;
         }
-
-        // Join to access related table names for scoring
+    
         $query->leftJoin('institutions', 'institutions.id', '=', 'posts.institution_id')
               ->leftJoin('subjects', 'subjects.id', '=', 'posts.subject_id')
               ->leftJoin('boards', 'boards.id', '=', 'posts.board_id');
-
-        $full = "%{$q}%";
-        
-        // Reordered bindings to match SQL CASE logic
-        $scoreBindings = [$full, $full, $full, $full, $full, $q, $full]; 
-
-        $scoreSql = "(CASE
-            WHEN posts.article LIKE ? THEN 100
-            WHEN posts.topic_name LIKE ? THEN 90
-            WHEN subjects.name LIKE ? THEN 85
-            WHEN institutions.name LIKE ? THEN 80
-            WHEN posts.chapter LIKE ? THEN 75
-            WHEN posts.year = ? THEN 70
-            WHEN boards.name LIKE ? THEN 60
-            ELSE 0 END)";
-
-        $query->addSelect(DB::raw("$scoreSql AS match_score"))
-              ->addBinding($scoreBindings, 'select')
-              ->where(function ($sub) use ($full) {
-                  $sub->where('posts.article', 'LIKE', $full)
-                    ->orWhere('institutions.name', 'LIKE', $full)
-                    ->orWhere('subjects.name', 'LIKE', $full)
-                    ->orWhere('boards.name', 'LIKE', $full)
-                    ->orWhere('posts.chapter', 'LIKE', $full)
-                    ->orWhere('posts.topic_name', 'LIKE', $full)
-                    ->orWhere('posts.year', 'LIKE', $full);
+    
+        $words = array_filter(explode(' ', $q), fn($word) => strlen($word) >= 2);
+        if (empty($words)) $words = [$q];
+    
+        $scoreSqlParts = [];
+        $bindings = [];
+    
+        foreach ($words as $word) {
+            $wildcard = "%{$word}%";
+            $scoreSqlParts[] = "(CASE
+                WHEN posts.topic_name LIKE ? THEN 90
+                WHEN subjects.name LIKE ? THEN 85
+                WHEN institutions.name LIKE ? THEN 80
+                WHEN posts.year LIKE ? THEN 80
+                WHEN posts.chapter LIKE ? THEN 75
+                WHEN posts.article LIKE ? THEN 60
+                WHEN boards.name LIKE ? THEN 60
+                WHEN posts.category LIKE ? THEN 90
+                ELSE 0 END)";
+    
+            array_push($bindings, $wildcard, $wildcard, $wildcard, $word, $word, $wildcard, $wildcard, $word);
+        }
+    
+        $totalScoreSql = implode(' + ', $scoreSqlParts);
+    
+        $query->addSelect(DB::raw("($totalScoreSql) AS match_score"))
+              ->addBinding($bindings, 'select')
+              ->where(function ($sub) use ($words) {
+                  foreach ($words as $word) {
+                      $wildcard = "%{$word}%";
+                      $sub->orWhere('posts.topic_name', 'LIKE', $wildcard)
+                          ->orWhere('subjects.name', 'LIKE', $wildcard)
+                          ->orWhere('institutions.name', 'LIKE', $wildcard)
+                          ->orWhere('posts.year', 'LIKE', $word);
+                  }
               })
               ->orderByDesc('match_score')
-              ->orderBy('was_viewed');
+              ->orderBy('was_viewed')
+              ->orderByDesc('year');
     }
 
     /* =====================================================
-        CRUD & REST (BOILERPLATE RETAINED)
+        CRUD METHODS
     ===================================================== */
 
     public function store(Request $request)
@@ -251,16 +447,6 @@ class QuestionController extends Controller
         return response()->json(Subject::where('institution_id', $request->institution_id)->where('status', 1)->orderBy('name')->get(['id', 'name']));
     }
 
-    public function createBlade()
-    {
-        return view('questions.create-blade', [
-            'institutions' => Institution::orderBy('name')->get(['id', 'name']),
-            'boards' => Board::orderBy('name')->get(['id', 'name']),
-            'years' => range(date('Y'), date('Y')-5),
-            'classes' => [['value' => 1, 'text' => '1st Year'], ['value' => 2, 'text' => '2nd Year'], ['value' => 3, 'text' => '3rd Year'], ['value' => 4, 'text' => '4th Year']]
-        ]);
-    }
-
     public function subject($slug)
     {
         $searchTerm = str_replace('-', ' ', $slug);
@@ -277,5 +463,48 @@ class QuestionController extends Controller
 
         $q = ucwords($searchTerm);
         return view('questions.index', compact('posts', 'q'));
+    }
+    
+    private function translateBnToEn(string $q): string
+    {
+        // 1. Bengali to English Numbers
+        $q = enNum($q);
+    
+        // 2. Bengali Suffixes & Common Keywords
+        $dictionary = [
+            'ম' => 'st', // 1st -> ১ম
+            'য়' => 'nd', // 2nd -> ২য়
+            'ষ' => 'rd', // 3rd -> ৩য়
+            'র্থ' => 'th', // 4th -> ৪র্থ
+            'পত্র' => 'paper',
+            'অধ্যায়' => 'chapter', // Uses regular 'Ya'
+            'অধ্যায়' => 'chapter', // Uses 'Ya' with dot (Yya)
+            'বিষয়' => 'subject',
+        ];
+    
+        // 3. Core Subject Names Mapping
+        $subjects = [
+            'বাংলা' => 'Bangla',
+            'ইংরেজি' => 'English',
+            'ইংরেজী' => 'English',
+            'আইসিটি' => 'ICT',
+            'তথ্য ও যোগাযোগ প্রযুক্তি' => 'ICT',
+            'পদার্থ' => 'Physics',
+            'পদার্থবিজ্ঞান' => 'Physics',
+            'বিজ্ঞান' => 'Science',
+            'গণিত' => 'Math',
+        ];
+    
+        // Apply translations for suffixes and keywords
+        foreach ($dictionary as $bn => $en) {
+            $q = str_replace($bn, $en, $q);
+        }
+    
+        // Apply translations for subject names (using word boundaries or exact match)
+        foreach ($subjects as $bn => $en) {
+            $q = str_replace($bn, $en, $q);
+        }
+    
+        return $q;
     }
 }

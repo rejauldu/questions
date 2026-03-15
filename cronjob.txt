@@ -1,0 +1,1 @@
+/usr/local/bin/php /home/examdaoc/artisan train:ai >> /dev/null 2>&1
