@@ -1,0 +1,24 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4338ca;stop-opacity:1" /> <stop offset="100%" style="stop-color:#1e1b4b;stop-opacity:1" /> </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGradient)" />
+
+  <rect x="30" y="30" width="1140" height="570" rx="20" ry="20" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="15,15" opacity="0.4" /> <rect x="30" y="30" width="1140" height="100" rx="20" ry="20" fill="#3730a3" /> <text x="70" y="90" font-family="Arial, sans-serif" font-weight="bold" font-size="55" fill="#fbbf24">
+    Exam
+    <tspan fill="#ffffff">DAO</tspan>
+  </text>
+  <text x="1130" y="90" font-family="Arial, sans-serif" font-size="28" fill="#a5b4fc" text-anchor="end" opacity="0.8">
+    QUICK QUIZ
+  </text>
+
+  <rect x="475" y="510" width="250" height="65" rx="32" ry="32" fill="#fbbf24" shadow="0 4px 6px rgba(0,0,0,0.3)" />
+  <text x="600" y="555" font-family="Arial, sans-serif" font-weight="black" font-size="34" fill="#1e1b4b" text-anchor="middle">
+    Solve Now!
+  </text>
+
+  <text x="1130" y="580" font-family="Arial, sans-serif" font-size="24" fill="#a5b4fc" text-anchor="end" opacity="0.6">
+    examdao.com
+  </text>
+</svg>

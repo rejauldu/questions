@@ -21,21 +21,6 @@
 
     {{-- Only Essential CSS --}}
     @vite(['resources/css/app.css'], 'build/front')
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-        .reading-serif {
-            font-family: 'Merriweather', serif;
-        }
-        /* Custom scrollbar for a clean look */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    </style>
 </head>
 
 <body class="bg-white text-slate-900 overflow-x-hidden antialiased">
@@ -46,7 +31,26 @@
     </main>
 
     {{-- Minimal Scripts --}}
+    {{-- Stacked Scripts from Child Views --}}
     @stack('scripts')
+
+    {{-- =====================================================
+         5. MATHJAX CONFIGURATION
+         ===================================================== --}}
+    <script>
+        window.MathJax = {
+            tex: {
+              inlineMath: [['$', '$'], ['\\(', '\\)']],
+              processEscapes: true
+            },
+            chtml: {
+              // This is the key setting for Bengali
+              mtextInheritFont: true, 
+              fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
     
 </body>
 </html>

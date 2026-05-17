@@ -6,21 +6,27 @@
 
     <div class="relative max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
 
-
         {{-- Personalized Container --}}
         <div id="personalized-hero-content" class="w-full flex flex-col items-center transition-all duration-700 ease-in-out">
-            {{-- DEFAULT CONTENT (Shown while loading or if no intent found) --}}
+            
+            {{-- Top Badge --}}
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary-100 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 sm:mb-6">
                 <span class="w-1.5 h-1.5 bg-warning-400 rounded-full animate-pulse"></span>
-                Past Questions & AI Guidance
+                Question Bank for Exams
             </div>
 
-            <h1 class="text-2xl sm:text-5xl font-extrabold text-white leading-tight mb-6 max-w-3xl px-2">
-                Master <span class="text-warning-400">Past Questions</span> for SSC, HSC & BCS
+            {{-- 🔥 UPDATED SEO H1 --}}
+            <h1 class="text-2xl sm:text-5xl font-extrabold text-white leading-tight mb-4 max-w-3xl px-2">
+                HSC & BCS <span class="text-warning-400">Previous Questions</span> with Answers
             </h1>
+
+            {{-- 🔥 Subtext (conversion + SEO boost) --}}
+            <p class="text-primary-200 text-sm sm:text-base max-w-xl mb-6">
+                Practice real exam questions, learn from solutions, and improve your chances of success.
+            </p>
         </div>
 
-        {{-- Search Container - Slimmer padding --}}
+        {{-- Search Container --}}
         <div class="w-full max-w-xl bg-white/5 backdrop-blur-md p-1.5 rounded-xl border border-white/10 mb-8">
             <form action="{{ route('questions.index') }}" method="GET" class="relative">
                 <div class="flex items-center bg-white rounded-lg overflow-hidden p-0.5 shadow-lg">
@@ -38,9 +44,8 @@
             </form>
         </div>
 
-        {{-- Institution Grid - Compact 2x2 for mobile --}}
+        {{-- Institution Grid --}}
         <div class="w-full max-w-4xl">
-            <!-- Changed grid to flex and added justify-center -->
             <div class="flex flex-wrap justify-center gap-2.5">
                 @foreach($institutions as $inst)
                 <a href="{{ route('exam.show', $inst->slug) }}" 
@@ -58,7 +63,7 @@
             </div>
         </div>
 
-        {{-- Action Links - Tighter spacing --}}
+        {{-- Action Links --}}
         <div class="mt-6 flex items-center justify-center gap-6">
             <a href="{{ url('/chatbot') }}" class="flex items-center gap-1.5 text-primary-200 hover:text-warning-400 transition-colors text-[11px] font-bold uppercase tracking-tight">
                 <x-icons.chatbot class="w-4 h-4"/>

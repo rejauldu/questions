@@ -40,17 +40,24 @@
   /* --- SVG Flowchart Control --- */
   /* This targets SVGs within your content area */
   svg {
-    @apply mx-auto block h-auto w-full max-w-xs;
+    @apply block h-auto w-full max-w-xs;
   }
 
   /* If you have small icons that shouldn't be 500px, 
      you can exclude them if they have a specific class */
   svg.icon, svg.inline {
-    @apply w-auto inline-block max-w-none;
+    @apply inline-block max-w-none;
   }
 }
 
 /* Traditional Bengali question styling */
 .bn-number::after {
     content: "। ";
+}
+/* No scroll at board scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; scrollbar-width: none;
 }

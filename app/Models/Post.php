@@ -16,20 +16,22 @@ class Post extends Model
 
     protected $fillable = [
         'article',
+        'short_article',
         'a',
+        'hash_a',
         'b',
         'c',
         'd',
         'ans',
         'explanation',
-        'answer_id',
+        'importance',
         'subject_id',
         'chapter',
         'topic_name',
         'category',
         'board_id',
         'year',
-        'class',
+        'q_no',
         'institution_id',
         'image1',
         'image2',
@@ -37,12 +39,14 @@ class Post extends Model
         'image4',
         'user_id',
         'is_verified',
-        'trained'
+        'trained',
+        'has_complex_html'
     ];
 
     protected $casts = [
         'year' => 'integer',
         'class' => 'string',
+        'is_verified' => 'boolean',  // You might want this too!
     ];
 
     /**
@@ -80,6 +84,10 @@ class Post extends Model
     public function bookmarks(): HasMany
     {
         return $this->hasMany(Bookmark::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
     // Inside App\Models\Post.php
     public function isBookmarkedBy(?User $user): bool

@@ -1,7 +1,8 @@
 @extends('layout')
+
 @section('seo')
 @php
-    // Collect all active filters in order
+    // Collect all active filters in order for SEO
     $activeFilters = [];
 
     if (!empty($currentParams['institution_name'])) {
@@ -22,33 +23,24 @@
     if (!empty($currentParams['chapter'])) {
         $activeFilters[] = $currentParams['chapter'];
     }
-    if (!empty($currentParams['section'])) {
-        $activeFilters[] = $currentParams['section'];
-    }
-    if (!empty($currentParams['sub_section'])) {
-        $activeFilters[] = $currentParams['sub_section'];
-    }
     if (!empty($currentParams['category'])) {
         $activeFilters[] = ucfirst($currentParams['category']);
     }
 
-    // SEO Keyword: join filters with comma for better indexing
+    // SEO Keyword: join filters with space for better indexing
     $searchKeyword = !empty($activeFilters) ? implode(" ", $activeFilters) : "Filtered Questions";
 
     // SEO Title
     $title = "$searchKeyword - Questions & Solutions | ExamDao";
 
-    // SEO Description: include all filters
+    // SEO Description
     $description = "Explore questions on ExamDao";
     if (!empty($activeFilters)) {
         $description .= " filtered by " . implode(" ", $activeFilters);
     }
     $description .= ". Access chapter-wise questions, past papers, model tests, and verified solutions for SSC, HSC, Admission, NU & BCS exams.";
 
-    // OG Image
     $image = url('/images/og-home.webp');
-
-    // Canonical URL
     $canonical = url()->current();
 @endphp
 @endsection
@@ -74,9 +66,9 @@
                             class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 js-filter-trigger text-xs sm:text-sm">
                             <option value="">All Institutions</option>
                             @foreach($initialFilters['institutions'] ?? [] as $institution)
-                                <option value="{{ $institution->id }}"
-                                    {{ ($currentParams['institution_id'] ?? '') == $institution->id ? 'selected' : '' }}>
-                                    {{ explode('/', $institution->name)[0] }}
+                                <option value="{{ $institution['id'] }}"
+                                    {{ ($currentParams['institution_id'] ?? '') == $institution['id'] ? 'selected' : '' }}>
+                                    {{ explode('/', $institution['name'])[0] }}
                                 </option>
                             @endforeach
                         </select>
@@ -90,6 +82,7 @@
                         <select id="subject_id" name="subject_id"
                             class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 js-filter-trigger text-xs sm:text-sm">
                             <option value="">Select Institution First</option>
+                            {{-- This will be populated by AJAX in your JS file --}}
                         </select>
                     </div>
 
@@ -102,9 +95,9 @@
                             class="w-full border-secondary-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 js-filter-trigger text-xs sm:text-sm">
                             <option value="">All Boards</option>
                             @foreach($initialFilters['boards'] ?? [] as $board)
-                                <option value="{{ $board->id }}"
-                                    {{ ($currentParams['board_id'] ?? '') == $board->id ? 'selected' : '' }}>
-                                    {{ $board->name }}
+                                <option value="{{ $board['id'] }}"
+                                    {{ ($currentParams['board_id'] ?? '') == $board['id'] ? 'selected' : '' }}>
+                                    {{ $board['name'] }}
                                 </option>
                             @endforeach
                         </select>
@@ -156,7 +149,15 @@
             </form>
         </div>
 
-        @include('partials.post-loop')
+        {{-- Results Section --}}
+        @if($posts->isNotEmpty())
+            @include('partials.post-loop')
+        @else
+            <div class="text-center py-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <p class="text-gray-500 text-lg">No questions found matching your filters.</p>
+                <a href="{{ route('search') }}" class="text-primary-600 font-bold mt-2 inline-block">Clear all filters</a>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

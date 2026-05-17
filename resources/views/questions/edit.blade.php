@@ -145,12 +145,14 @@
 
             {{-- 6. Bottom Metadata & Submit --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-8 border-t border-secondary-100">
+                {{-- Importance Select --}}
                 <div>
-                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Target Class</label>
-                    <select name="class" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
-                        <option value="">Select Class</option>
-                        @foreach($classes as $c)
-                            <option value="{{ $c['value'] }}" {{ $question->class == $c['value'] ? 'selected' : '' }}>{{ $c['text'] }}</option>
+                    <label class="text-[10px] font-bold text-secondary-500 uppercase tracking-widest">Importance</label>
+                    <select name="importance" class="w-full mt-1 border-secondary-300 rounded-lg text-sm focus:ring-primary-500">
+                        @foreach([0, 1, 2, 3] as $val)
+                            <option value="{{ $val }}" {{ old('importance', $question->importance) == $val ? 'selected' : '' }}>
+                                {{ $val == 0 ? 'None (0)' : str_repeat('⭐', $val) . " ($val)" }}
+                            </option>
                         @endforeach
                     </select>
                 </div>

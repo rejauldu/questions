@@ -3,7 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\CacheRoute;
 use App\Http\Middleware\NoCacheAuth;
+use App\Http\Middleware\RoleHierarchy;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,8 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // --- Route Middleware Aliases ---
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleHierarchy::class,
-            'no.cache.auth' => NoCacheAuth::class, // ✅ added (no-cache for /auth/*)
+            'role' => RoleHierarchy::class,
+            'no.cache.auth' => NoCacheAuth::class,
+            'cache' => CacheRoute::class,
         ]);
 
         // Now you can use this middleware in routes like:

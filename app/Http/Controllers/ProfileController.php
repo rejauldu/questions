@@ -3,52 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\{Auth, Redirect, Cache, Redis};
 use App\Models\Institution;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Cache Institutions for 24 hours. 
+     * They rarely change, so don't hit the DB every time.
      */
     public function edit()
     {
         $user = auth()->user();
-        // Fetch institutions so the user can change their target exam if needed
-        $institutions = Institution::all(); 
+        
+        $institutions = Cache::remember('all_institutions', 86400, function () {
+            return Institution::all();
+        });
         
         return view('profile.edit', compact('user', 'institutions'));
     }
 
+    /**
+     * Profile pages are usually private. We use a user-specific cache key.
+     */
     public function show()
     {
         $user = Auth::user();
-        
-        $institution = $user->institution;
-        $recommendedSubjects = $institution ? $institution->subjects()->limit(4)->get() : [];
+        $cacheKey = "user_profile_data_{$user->id}";
 
-        $recentAttempts = $user->examAttempts()
-                            ->with('subject')
-                            ->latest()
-                            ->limit(5)
-                            ->get();
+        // Cache the complex joins/queries for 10 minutes
+        $data = Cache::remember($cacheKey, 600, function () use ($user) {
+            $institution = $user->institution;
+            
+            return [
+                'recommendedSubjects' => $institution ? $institution->subjects()->limit(4)->get() : [],
+                'recentAttempts' => $user->examAttempts()->with('subject')->latest()->limit(5)->get(),
+                'bookmarks' => $user->bookmarks()->with('post')->latest()->limit(10)->get(),
+            ];
+        });
 
-        // ADD THIS: Fetch bookmarked questions
-        $bookmarks = $user->bookmarks()
-                        ->with('post')
-                        ->latest()
-                        ->limit(10) 
-                        ->get();
-
-        return view('profile.show', compact('user', 'recommendedSubjects', 'recentAttempts', 'bookmarks'));
+        return view('profile.show', array_merge(['user' => $user], $data));
     }
 
     /**
-     * Update the user's profile information.
+     * On update, we MUST delete the old Redis cache keys.
      */
     public function update(Request $request)
     {
@@ -62,41 +62,58 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
+        // CLEAR CACHE: So the user sees their new data immediately
+        Cache::forget("user_profile_data_{$user->id}");
+        Cache::forget("user_stat_{$user->id}"); // Clear getStatus cache too
+
         return redirect()->route('profile.show')->with('status', 'Profile updated successfully!');
     }
 
     /**
-     * Delete the user's account.
+     * Optimized getStatus using the logic we discussed earlier.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function getStatus()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['auth' => false, 'csrf' => csrf_token()]);
+        }
+
+        // Extremely fast lookup for repeated calls
+        $userData = Cache::remember("user_stat_{$user->id}", 3600, function () use ($user) {
+            return [
+                'name'    => $user->name,
+                'initial' => $user->initial, // Assumes attribute in model
+                'role'    => $user->role,
+            ];
+        });
+
+        return response()->json([
+            'auth' => true,
+            'csrf' => csrf_token(),
+            'user' => $userData
+        ]);
+    }
+
+    public function destroy(Request $request)
     {
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+        
+        // Clean up Redis before deleting user
+        Cache::forget("user_profile_data_{$user->id}");
+        Cache::forget("user_stat_{$user->id}");
 
         Auth::logout();
-
         $user->delete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
-    }
-    public function getStatus()
-    {
-        $user = auth()->user();
-
-        return response()->json([
-            'auth' => (bool)$user,
-            'csrf' => csrf_token(),
-            'user' => $user ? [
-                'name'    => $user->name,
-                'initial' => substr($user->name, 0, 1),
-                'role'    => $user->role, // Ensure your 'users' table has a 'role' column
-            ] : null
-        ]);
     }
 }

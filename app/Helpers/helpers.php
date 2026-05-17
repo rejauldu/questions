@@ -90,7 +90,7 @@ if (!function_exists('question_meta_text')) {
         }
     
         if (!empty($post->board->name)) {
-            $parts[] = $post->board->name . " Board";
+            $parts[] = $post->board->name;
         }
     
         if (!empty($post->year)) {
@@ -125,7 +125,7 @@ if (!function_exists('question_image_basename')) {
         if (!empty($data['board_id'])) {
             $board = \App\Models\Board::find($data['board_id']);
             if ($board?->name) {
-                $parts[] = $board->name . " Board";
+                $parts[] = $board->name;
             }
         }
 
@@ -249,6 +249,13 @@ if (!function_exists('bnNum')) {
         $bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 
         return str_replace($en, $bn, (string)$number);
+    }
+}
+if (!function_exists('enNum')) {
+    function enNum($number): string {
+        $bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+        $en = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        return str_replace($bn, $en, (string)$number);
     }
 }
 if (!function_exists('bnBoard')) {

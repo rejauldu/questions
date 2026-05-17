@@ -16,5 +16,5 @@ use Illuminate\Support\Facades\Artisan;
 
 
 Schedule::call(function () {
-    Artisan::call('train:ai');
+    Artisan::call('cronjob');
 })->everyMinute();

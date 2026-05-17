@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Institution;
@@ -22,6 +23,8 @@ class Subject extends Model
      */
     protected $fillable = [
         'name',
+        'bangla',
+        'banglish',
         'class',
         'institution_id',
         'year',
@@ -37,15 +40,16 @@ class Subject extends Model
      */
     protected $casts = [
         'exam_at' => 'datetime', // Casts the database column to a Carbon instance
+        'chapters' => 'json',
     ];
 
     /**
      * Get the institution that owns the subject.
      * (Assumes you have an Institution model and migration)
      */
-    public function institution(): HasMany
+    public function institution(): BelongsTo
     {
-        return $this->hasMany(Institution::class);
+        return $this->belongsTo(Institution::class);
     }
     public function posts(): HasMany
     {

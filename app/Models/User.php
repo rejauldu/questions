@@ -27,6 +27,13 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    
+    protected $appends = ['initial'];
+
+    public function getInitialAttribute()
+    {
+        return mb_substr($this->name, 0, 1);
+    }
 
     protected function casts(): array
     {

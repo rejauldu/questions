@@ -11,7 +11,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
             {{-- BCS Cluster --}}
             @foreach($bcsSubjects as $subject)
-            <a href="{{ route('bcs.show', ['year' => $subject->slug]) }}" 
+            <a href="{{ route('subject.show', ['subject_slug' => $subject->slug]) }}" 
                class="bcs bg-white p-4 md:p-6 rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between min-h-[100px]">
                 <h4 class="font-bold text-gray-800 group-hover:text-blue-600 transition-colors leading-tight">
                     {{ $subject->name }}
@@ -27,8 +27,9 @@
 
             {{-- HSC Cluster --}}
             @foreach($hscSubjects as $subject)
-            <a href="{{ route('hsc.show', ['subject' => $subject->slug]) }}" 
-               class="hsc bg-white p-4 md:p-6 rounded-xl border border-gray-200 hover:border-emerald-400 hover:shadow-md transition-all group hidden flex flex-col justify-between min-h-[100px]">
+            {{-- Removed 'hidden' class to ensure visibility --}}
+            <a href="{{ route('subject.show', ['subject_slug' => $subject->slug]) }}" 
+               class="hsc bg-white p-4 md:p-6 rounded-xl border border-gray-200 hover:border-emerald-400 hover:shadow-md transition-all group flex flex-col justify-between min-h-[100px]">
                 <h4 class="font-bold text-gray-800 group-hover:text-emerald-600 transition-colors leading-tight">
                     {{ $subject->name }}
                 </h4>

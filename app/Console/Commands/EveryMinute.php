@@ -5,33 +5,33 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\TransformerController;
+use App\Http\Controllers\SitemapController; // ✅ ADD THIS
+use App\Http\Controllers\AiController;
+use App\Services\GeminiService;
 
 class EveryMinute extends Command
 {
-    /**
-     * The signature remains the same for your cPanel/system settings.
-     */
-    protected $signature = 'train:ai';
+    protected $signature = 'cronjob';
+    protected $description = 'Triggers AI + Sitemap generation';
 
-    protected $description = 'Triggers the TransformerController trainOne method via Cron';
-
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(GeminiService $service)
     {
-        Log::info('AI_CRON_DEBUG: Cron triggered trainOne starting.');
-
         try {
-            // We resolve the controller from the container and call the method directly.
-            $controller = app(TransformerController::class);
-            $response = $controller->trainOne();
 
-            // Log the result from the controller's JSON response
-            Log::info('AI_CRON_DEBUG: ' . json_encode($response->getData()));
+            // ✅ 1. Gemini কাজ
+            // $service->fillMissingTopics();
+
+            // 2. Sitemap
+            // $sitemap = app(SitemapController::class);
+            // $sitemap->generate();
+            
+            //3. OCR
+            $ai = app(AiController::class);
+            // $ai->processOcrQueue();
+            $ai->mcq();
 
         } catch (\Exception $e) {
-            Log::error('AI_CRON_DEBUG: Cron training failed! ' . $e->getMessage());
+            Log::error('AI_CRON_DEBUG: Cron failed! ' . $e->getMessage());
         }
     }
 }

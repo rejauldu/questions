@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
-    TransformerController,
+    AiController,
     BcsController,
     PageController,
     QuestionController,
@@ -13,12 +13,15 @@ use App\Http\Controllers\{
     ChatbotController,
     GuideController,
     HscController,
+    MaintenanceController,
     ProfileController,
     QuestionCorrectionController,
+    ShareImageController,
     SubjectDateController,
     SitemapController,
+    SubjectController,
     ToolController,
-    TrackingController};
+    AppInitializationController};
 
 
 
@@ -28,7 +31,9 @@ use App\Http\Controllers\{
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/', [PageController::class, 'home'])->name('home')->middleware('cache:30');
+
+Route::get('/subject/{subject_slug}', [SubjectController::class, 'show'])->name('subject.show');
 
 Route::get('/questions/list', [PageController::class, 'list'])->name('questions.list');
 
@@ -45,6 +50,8 @@ Route::get('/questions/{question}/{slug?}', [QuestionController::class, 'show'])
 Route::get('/search', [QuestionController::class, 'search'])->name('search');
 
 Route::get('/subject/{slug}', [QuestionController::class, 'subject'])->name('subject.show');
+
+Route::get('/share-image/{id}.jpg', [ShareImageController::class, 'generate'])->where('id', '[0-9]+')->name('share.image');
 
 /*
 |--------------------------------------------------------------------------
@@ -73,7 +80,6 @@ Route::get('/guide/{slug}', [GuideController::class, 'show'])->name('guide.show'
 |--------------------------------------------------------------------------
 */
 
-Route::get('/svg', [ToolController::class, 'svg'])->name('tools.svg');
 Route::get('/flowchart', [ToolController::class, 'flowchart'])->name('tools.flowchart');
 
 Route::get('/about', [PageController::class, 'about'])->name('about');
@@ -83,25 +89,50 @@ Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 
 /*
 |--------------------------------------------------------------------------
-| Tracking (Public)
+| App Initialization (Public)
 |--------------------------------------------------------------------------
 */
 
-Route::post('/auth/track-activity/{question}', [TrackingController::class, 'logActivity'])->name('track.activity');
+Route::post('/auth/track-activity/{question}', [AppInitializationController::class, 'logActivity'])->name('track.activity');
 
-Route::get('/suggestions', [TrackingController::class, 'getSuggestions'])->name('suggestions.index');
+Route::get('/suggestions', [AppInitializationController::class, 'getSuggestions'])->name('suggestions.index');
 
+Route::get('/recache', [AppInitializationController::class, 'recache'])->middleware('auth');
+
+/*
+|--------------------------------------------------------------------------
+| Maintenance
+|--------------------------------------------------------------------------
+*/
+Route::get('tools', [ToolController::class, 'index']);
+Route::prefix('auth')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('tools', [ToolController::class, 'index']);
+    Route::get('fix-article-formatting', [ToolController::class, 'fixArticleFormatting']);
+    Route::get('fix-hash', [MaintenanceController::class, 'updateNormalizedData'])->name('maintenance.hashes');
+    Route::get('fix-latex', [QuestionCorrectionController::class, 'fixLatex']);
+    Route::get('fix-latex-wrapper', [ToolController::class, 'fixLatexWrapper']);
+    Route::get('fix-pre', [QuestionCorrectionController::class, 'fixPre']);
+    Route::get('fix-svg', [QuestionCorrectionController::class, 'fixSvg']);
+    Route::get('fix-table', [MaintenanceController::class, 'fixTable']);
+    Route::get('auto-topic', [QuestionCorrectionController::class, 'autoPopulateTopic']);
+    Route::get('remove-br', [ToolController::class, 'removeBrTags']);
+    Route::get('remove-q-no', [ToolController::class, 'removeQNo']);
+    Route::get('/sitemap', [SitemapController::class, 'generate']);
+    Route::get('/svg/{post}', [ToolController::class, 'svg'])->name('svg.edit');
+    Route::post('/svg/{post}/save', [ToolController::class, 'updateSvg'])->name('svg.save');
+    Route::get('/cache', [ToolController::class, 'clearCloudflare'])->name('admin.cache.index');
+    Route::get('/warm-url', [ToolController::class, 'warmSingleUrl'])->name('admin.cache.warm');
+});
 /*
 |--------------------------------------------------------------------------
 | AI
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('ai')->group(function () {
-    Route::get('/search', [TransformerController::class, 'search']);
-    Route::get('/train', [TransformerController::class, 'train']);
-    Route::get('/reset', [TransformerController::class, 'reset']);
-    Route::get('/test', [TransformerController::class, 'test']);
+Route::prefix('auth/ai')->group(function () {
+    Route::get('/train', [AiController::class, 'trainOne']);
+    Route::get('/mcq', [AiController::class, 'mcq']);
+    Route::get('/ocr', [AiController::class, 'processOcrQueue']);
 });
 
 /*
@@ -111,7 +142,7 @@ Route::prefix('ai')->group(function () {
 */
 
 //Intent
-Route::get('/auth/user-intent', [TrackingController::class, 'getUserIntent']);
+Route::get('/auth/init', [AppInitializationController::class, 'init']);
 
 Route::middleware('no.cache.auth')->group(function () {
 
@@ -140,7 +171,7 @@ Route::middleware('no.cache.auth')->group(function () {
         /*
         | Question Creation / Editing
         */
-        Route::get('/questions-create', [QuestionController::class, 'createBlade'])->name('questions.create');
+        Route::get('questions/create', [QuestionController::class, 'create'])->name('questions.create');
         
         Route::post('/image-upload', [QuestionController::class, 'upload'])->name('api.image.upload');
 
@@ -149,6 +180,19 @@ Route::middleware('no.cache.auth')->group(function () {
         Route::get('/auth/questions/{question}/edit', [QuestionController::class, 'edit'])->name('questions.edit');
 
         Route::put('/auth/questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
+        
+        
+        Route::get('/auth/questions/next', [QuestionController::class, 'next'])->name('questions.next');
+        
+        Route::put('/auth/clipboard/store', [QuestionController::class, 'explanationStore'])->name('explanation.store');
+
+        /*
+        | Question Verification
+        */
+        Route::get('/auth/verify', [QuestionCorrectionController::class, 'index']);
+        Route::post('/auth/verify/{post}', [QuestionCorrectionController::class, 'update'])->name('questions.verify');
+
+        Route::get('/auth/ai-suggest/{post}', [QuestionCorrectionController::class, 'getAiSuggestion'])->name('ai.suggest');
 
         /*
         | Comments
@@ -200,16 +244,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/api/subject-dates/subjects', [SubjectDateController::class, 'getSubjects']);
 
     Route::post('/subject-dates/update', [SubjectDateController::class, 'updateDates'])->name('subject-dates.update');
-
-    /*
-    | Question Verification
-    */
-    Route::get('/auth/verify', [QuestionCorrectionController::class, 'index']);
-    Route::post('/auth/verify/{post}', [QuestionCorrectionController::class, 'update'])->name('questions.verify');
-
-    Route::get('/auth/ai-suggest/{post}', [QuestionCorrectionController::class, 'getAiSuggestion'])->name('ai.suggest');
-
-    Route::get('/auth/auto-topic', [QuestionCorrectionController::class, 'autoPopulateTopic']);
 });
 
 /*
@@ -217,8 +251,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 | API & System
 |--------------------------------------------------------------------------
 */
-
-Route::get('/sitemap', [SitemapController::class, 'generate']);
 
 Route::get('/api/posts/subjects-by-institution', [QuestionController::class, 'getSubjectsByInstitution'])->name('api.posts.subjects-by-institution');
 
